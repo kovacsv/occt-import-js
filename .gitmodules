@@ -1,0 +1,3 @@
+[submodule "occt"]
+	path = occt
+	url = https://git.dev.opencascade.org/repos/occt.git
