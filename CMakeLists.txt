@@ -9,16 +9,6 @@ add_definitions (-DUNICODE -D_UNICODE)
 
 project (OcctImportJS)
 
-function (SetCompilerOptions module)
-	target_compile_options (${module} PUBLIC "$<$<CONFIG:Debug>:-DDEBUG>")
-	if (WIN32)
-		set (AdditionalWarnings /w44061 /w44062 /w44265 /w44266 /w44355 /w44596 /w44800)
-		target_compile_options (${module} PUBLIC /W3 ${AdditionalWarnings})
-	else ()
-		target_compile_options (${module} PUBLIC -std=c++11)
-	endif ()
-endfunction ()
-
 # OcctImportJS
 
 set (OcctSourceFolders)
@@ -206,23 +196,42 @@ file (GLOB
 )
 source_group ("Sources" FILES ${OcctImportJSSourceFiles})
 source_group ("OCCT" FILES ${OcctSourceFiles})
-add_library (OcctImportJS ${OcctImportJSSourceFiles} ${OcctSourceFiles})
-SetCompilerOptions (OcctImportJS)
+
+if (${EMSCRIPTEN})
+	add_executable (OcctImportJS ${OcctImportJSSourceFiles} ${OcctSourceFiles})
+	target_compile_options (OcctImportJS PUBLIC "$<$<CONFIG:Debug>:-gsource-map>")
+	target_compile_options (OcctImportJS PUBLIC -fexceptions)
+
+	target_link_options (OcctImportJS PUBLIC -sMODULARIZE=1)
+	target_link_options (OcctImportJS PUBLIC -sEXPORT_NAME='occtimportjs')
+	target_link_options (OcctImportJS PUBLIC -sALLOW_MEMORY_GROWTH=1 --no-heap-copy)
+	target_link_options (OcctImportJS PUBLIC -sNO_DISABLE_EXCEPTION_CATCHING)
+	
+	# to check for memory errors
+	# target_link_options (OcctImportJS PUBLIC -sASSERTIONS=1 -sSAFE_HEAP=1 -sWARN_UNALIGNED=1)
+	
+	target_link_options (OcctImportJS PUBLIC --bind)
+else ()
+	add_library (OcctImportJS ${OcctImportJSSourceFiles} ${OcctSourceFiles})
+endif ()
+
 target_include_directories (OcctImportJS PUBLIC	${OcctIncludeDirs})
 set_target_properties(OcctImportJS PROPERTIES OUTPUT_NAME occt-import-js)
 set_target_properties (OcctImportJS PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}")
 
 # OcctImportJSExample
 
-set (OcctImportJSExampleSourcesFolder occt-import-js/example)
-file (GLOB
-	OcctImportJSExampleSourceFiles
-	${OcctImportJSExampleSourcesFolder}/*.hpp
-	${OcctImportJSExampleSourcesFolder}/*.cpp
-)
-source_group ("Sources" FILES ${OcctImportJSExampleSourceFiles})
-add_executable (OcctImportJSExample ${OcctImportJSExampleSourceFiles})
-SetCompilerOptions (OcctImportJSExample)
-target_include_directories (OcctImportJSExample PUBLIC ${OcctImportJSSourcesFolder})
-target_link_libraries (OcctImportJSExample OcctImportJS)
-set_target_properties (OcctImportJSExample PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}")
+if (${EMSCRIPTEN})
+else ()
+	set (OcctImportJSExampleSourcesFolder occt-import-js/example)
+	file (GLOB
+		OcctImportJSExampleSourceFiles
+		${OcctImportJSExampleSourcesFolder}/*.hpp
+		${OcctImportJSExampleSourcesFolder}/*.cpp
+	)
+	source_group ("Sources" FILES ${OcctImportJSExampleSourceFiles})
+	add_executable (OcctImportJSExample ${OcctImportJSExampleSourceFiles})
+	target_include_directories (OcctImportJSExample PUBLIC ${OcctImportJSSourcesFolder})
+	target_link_libraries (OcctImportJSExample OcctImportJS)
+	set_target_properties (OcctImportJSExample PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}")
+endif ()

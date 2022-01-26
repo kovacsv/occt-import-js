@@ -6,10 +6,15 @@
 #include <BRep_Tool.hxx>
 #include <BRepMesh_IncrementalMesh.hxx>
 
-const std::string StepToJson (const std::string& filePath)
+#ifdef EMSCRIPTEN
+#include <emscripten/bind.h>
+#endif
+
+static std::string StepToJson (std::istream& inputStream)
 {
 	STEPControl_Reader reader;
- 	IFSelect_ReturnStatus readStatus = reader.ReadFile (filePath.c_str ());
+	std::string dummyFileName = "stp";
+ 	IFSelect_ReturnStatus readStatus = reader.ReadStream (dummyFileName.c_str (), inputStream);
 	if (readStatus != IFSelect_RetDone) {
 		return ""; // TODO
 	}
@@ -48,7 +53,49 @@ const std::string StepToJson (const std::string& filePath)
 	return "";
 }
 
-const std::string StepToJson (const std::vector<std::uint8_t>& fileContent)
+std::string StepToJson (const std::string& filePath)
 {
-	return "";
+	std::ifstream inputStream (filePath, std::ios::binary);
+	if (!inputStream.is_open ()) {
+		return ""; // TODO
+	}
+	std::string result = StepToJson (inputStream);
+	inputStream.close ();
+	return result;
 }
+
+class VectorBuffer : public std::streambuf
+{
+public:
+    VectorBuffer (const std::vector<uint8_t>& v)
+	{
+        setg ((char*) v.data (), (char*) v.data (), (char*) (v.data () + v.size ()));
+    }
+
+    ~VectorBuffer ()
+	{
+
+	}
+};
+
+std::string StepToJson (const std::vector<std::uint8_t>& fileContent)
+{
+	VectorBuffer fileBuffer (fileContent);
+	std::istream fileStream (&fileBuffer);
+	return StepToJson (fileStream);
+}
+
+#ifdef EMSCRIPTEN
+
+std::string StepToJsonEmscripten (const emscripten::val& content)
+{
+	const std::vector<uint8_t>& contentArr = emscripten::vecFromJSArray<std::uint8_t> (content);
+	return StepToJson (contentArr);
+}
+
+EMSCRIPTEN_BINDINGS (assimpjs)
+{
+	emscripten::function<std::string, const emscripten::val&> ("StepToJson", &StepToJsonEmscripten);
+}
+
+#endif
