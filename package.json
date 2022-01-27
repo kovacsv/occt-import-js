@@ -1,0 +1,20 @@
+{
+	"name": "occt-import-js",
+	"version": "0.0.1",
+	"description": "Javascript interface for the occt library.",
+	"license": "LGPL-2.1",
+	"main": "./dist/occt-import-js.js",
+	"repository": "github:kovacsv/occt-import-js",
+	"keywords": [
+		"3d",
+		"model",
+		"converter"
+	],
+	"devDependencies": {
+		"mocha": "^8.3.2"
+	},
+	"scripts": {
+		"test": "mocha test/test.js"
+	},
+	"dependencies": {}
+}

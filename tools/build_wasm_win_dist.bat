@@ -9,7 +9,6 @@ call npm run test || goto :error
 mkdir dist
 copy build_wasm\Release\occt-import-js.js dist\occt-import-js.js || goto :error
 copy build_wasm\Release\occt-import-js.wasm dist\occt-import-js.wasm || goto :error
-copy assimp\LICENSE dist\license.assimp.txt || goto :error
 copy LICENSE.md dist\license.occt-import-js.txt || goto :error
 xcopy dist\*.* docs\dist\*.* /K /D /H /Y
 

@@ -32,7 +32,7 @@ int ReadStepFile (const emscripten::val& content)
 {
 	const std::vector<uint8_t>& contentArr = emscripten::vecFromJSArray<std::uint8_t> (content);
 	EmscriptenOutput output;
-	return ReadStepFile (contentArr, output);
+	return (int) ReadStepFile (contentArr, output);
 }
 
 EMSCRIPTEN_BINDINGS (assimpjs)
