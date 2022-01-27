@@ -21,6 +21,8 @@ public:
 class Output
 {
 public:
+	virtual void OnBegin () = 0;
+	virtual void OnEnd () = 0;
 	virtual void OnShape (const Shape& shape) = 0;
 };
 

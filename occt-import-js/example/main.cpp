@@ -10,6 +10,16 @@ public:
 	
 	}
 
+	virtual void OnBegin () override
+	{
+
+	}
+
+	virtual void OnEnd () override
+	{
+	
+	}
+
 	virtual void OnShape (const Shape& shape) override
 	{
 		std::cout << "Shape Start" << std::endl;

@@ -26,17 +26,19 @@ public:
 class OcctFace : public Face
 {
 public:
-	OcctFace (const opencascade::handle<Poly_Triangulation>& triangulation) :
-		triangulation (triangulation)
+	OcctFace (const opencascade::handle<Poly_Triangulation>& triangulation, const TopLoc_Location& location) :
+		triangulation (triangulation),
+		location (location)
 	{
 
 	}
 
 	virtual void EnumerateVertices (const std::function<void (double, double, double)>& onVertex) const override
 	{
-		// TODO: get transformation from location
+		gp_Trsf transformation = location.Transformation ();
 		for (Standard_Integer nodeIndex = 1; nodeIndex <= triangulation->NbNodes (); nodeIndex++) {
 			gp_Pnt vertex = triangulation->Node (nodeIndex);
+			vertex.Transform (transformation);
 			onVertex (vertex.X (), vertex.Y (), vertex.Z ());
 		}
 	}
@@ -50,6 +52,7 @@ public:
 	}
 
 	const opencascade::handle<Poly_Triangulation>&	triangulation;
+	const TopLoc_Location&							location;
 };
 
 class OcctShape : public Shape
@@ -70,7 +73,7 @@ public:
 			if (triangulation.IsNull () || triangulation->NbNodes () == 0 || triangulation->NbTriangles () == 0) {
 				continue;
 			}
-			OcctFace outputFace (triangulation);
+			OcctFace outputFace (triangulation, location);
 			onFace (outputFace);
 		}
 	}
@@ -89,6 +92,7 @@ static Result ReadStepFile (std::istream& inputStream, Output& output)
 
 	stepReader.TransferRoots ();
 	
+	output.OnBegin ();
 	for (Standard_Integer rank = 1; rank <= stepReader.NbShapes (); rank++) {
 		TopoDS_Shape shape = stepReader.Shape (rank);
 
@@ -101,6 +105,7 @@ static Result ReadStepFile (std::istream& inputStream, Output& output)
 		OcctShape outputShape (shape);
 		output.OnShape (outputShape);
 	}
+	output.OnEnd ();
 
 	return Result::Success;
 }
