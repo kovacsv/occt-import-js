@@ -11,9 +11,11 @@
 		"converter"
 	],
 	"devDependencies": {
+		"http-server": "^0.12.3",
 		"mocha": "^8.3.2"
 	},
 	"scripts": {
+		"start": "http-server",
 		"test": "mocha test/test.js"
 	},
 	"dependencies": {}
