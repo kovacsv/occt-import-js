@@ -33,6 +33,11 @@ public:
 
 	}
 
+	virtual bool HasNormals () const override
+	{
+		return triangulation->HasNormals ();
+	}
+
 	virtual void EnumerateVertices (const std::function<void (double, double, double)>& onVertex) const override
 	{
 		gp_Trsf transformation = location.Transformation ();
@@ -40,6 +45,20 @@ public:
 			gp_Pnt vertex = triangulation->Node (nodeIndex);
 			vertex.Transform (transformation);
 			onVertex (vertex.X (), vertex.Y (), vertex.Z ());
+		}
+	}
+
+	virtual void EnumerateNormals (const std::function<void (double, double, double)>& onNormal) const override
+	{
+		if (!triangulation->HasNormals ()) {
+			return;
+		}
+
+		gp_Trsf transformation = location.Transformation ();
+		for (Standard_Integer nodeIndex = 1; nodeIndex <= triangulation->NbNodes (); nodeIndex++) {
+			gp_Dir normal = triangulation->Normal (nodeIndex);
+			normal.Transform (transformation);
+			onNormal (normal.X (), normal.Y (), normal.Z ());
 		}
 	}
 
@@ -96,11 +115,9 @@ static Result ReadStepFile (std::istream& inputStream, Output& output)
 	for (Standard_Integer rank = 1; rank <= stepReader.NbShapes (); rank++) {
 		TopoDS_Shape shape = stepReader.Shape (rank);
 
-		// TODO: calculate accuracy based on bounding box
-		double accuracy = 1.0;
-
 		// Calculate triangulation
-		BRepMesh_IncrementalMesh mesh (shape, accuracy);
+		IMeshTools_Parameters parameters;
+		BRepMesh_IncrementalMesh mesh (shape, parameters);
 
 		OcctShape outputShape (shape);
 		output.OnShape (outputShape);

@@ -8,7 +8,10 @@
 class Face
 {
 public:
+	virtual bool HasNormals () const = 0;
+
 	virtual void EnumerateVertices (const std::function<void (double, double, double)>& onVertex) const = 0;
+	virtual void EnumerateNormals (const std::function<void (double, double, double)>& onNormal) const = 0;
 	virtual void EnumerateTriangles (const std::function<void (int, int, int)>& onTriangle) const = 0;
 };
 

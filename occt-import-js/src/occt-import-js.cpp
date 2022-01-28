@@ -9,8 +9,8 @@ class EmscriptenOutput : public Output
 public:
 	EmscriptenOutput () :
 		resultObj (emscripten::val::object ()),
-		shapesArr (emscripten::val::array ()),
-		shapeIndex (0)
+		meshesArr (emscripten::val::array ()),
+		meshIndex (0)
 	{
 		
 	}
@@ -22,40 +22,53 @@ public:
 
 	virtual void OnEnd () override
 	{
-		resultObj.set ("shapes", shapesArr);
+		resultObj.set ("meshes", meshesArr);
 	}
 
 	virtual void OnShape (const Shape& shape) override
 	{
 		int vertexCount = 0;
 		int triangleCount = 0;
-		emscripten::val vertices (emscripten::val::array ());
-		emscripten::val triangles (emscripten::val::array ());
+
+		emscripten::val positionArr (emscripten::val::array ());
+		emscripten::val indexArr (emscripten::val::array ());
+		
 		shape.EnumerateFaces ([&] (const Face& face) {
 			int vertexOffset = vertexCount;
 			face.EnumerateVertices ([&] (double x, double y, double z) {
-				vertices.set (vertexCount * 3, x);
-				vertices.set (vertexCount * 3 + 1, y);
-				vertices.set (vertexCount * 3 + 2, z);
+				positionArr.set (vertexCount * 3, x);
+				positionArr.set (vertexCount * 3 + 1, y);
+				positionArr.set (vertexCount * 3 + 2, z);
 				vertexCount += 1;
 			});
 			face.EnumerateTriangles ([&] (int v0, int v1, int v2) {
-				triangles.set (triangleCount * 3, vertexOffset + v0 - 1);
-				triangles.set (triangleCount * 3 + 1, vertexOffset + v1 - 1);
-				triangles.set (triangleCount * 3 + 2, vertexOffset + v2 - 1);
+				indexArr.set (triangleCount * 3, vertexOffset + v0 - 1);
+				indexArr.set (triangleCount * 3 + 1, vertexOffset + v1 - 1);
+				indexArr.set (triangleCount * 3 + 2, vertexOffset + v2 - 1);
 				triangleCount += 1;
 			});
 		});
-		emscripten::val shapeObj (emscripten::val::object ());
-		shapeObj.set ("vertices", vertices);
-		shapeObj.set ("triangles", triangles);
-		shapesArr.set (shapeIndex, shapeObj);
-		shapeIndex += 1;
+		
+		emscripten::val positionObj (emscripten::val::object ());
+		positionObj.set ("array", positionArr);
+
+		emscripten::val indexObj (emscripten::val::object ());
+		indexObj.set ("array", indexArr);
+
+		emscripten::val attributesObj (emscripten::val::object ());
+		attributesObj.set ("position", positionObj);
+
+		emscripten::val meshObj (emscripten::val::object ());
+		meshObj.set ("attributes", attributesObj);
+		meshObj.set ("index", indexObj);
+
+		meshesArr.set (meshIndex, meshObj);
+		meshIndex += 1;
 	}
 
 	emscripten::val		resultObj;
-	emscripten::val		shapesArr;
-	int					shapeIndex;
+	emscripten::val		meshesArr;
+	int					meshIndex;
 };
 
 emscripten::val ReadStepFile (const emscripten::val& content)

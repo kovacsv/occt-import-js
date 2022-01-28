@@ -28,8 +28,11 @@ public:
 			face.EnumerateVertices ([] (double x, double y, double z) {
 				std::cout << "    Vertex: " << x << ", " << y << ", " << z << std::endl;
 			});
+			face.EnumerateNormals ([] (double x, double y, double z) {
+				std::cout << "    Normal: " << x << ", " << y << ", " << z << std::endl;
+			});
 			face.EnumerateTriangles ([] (int v0, int v1, int v2) {
-				std::cout << "    Trianlge: " << v0 << ", " << v1 << ", " << v2 << std::endl;
+				std::cout << "    Triangle: " << v0 << ", " << v1 << ", " << v2 << std::endl;
 			});
 			std::cout << "  Face End" << std::endl;
 		});
