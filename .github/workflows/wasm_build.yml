@@ -1,0 +1,33 @@
+name: WASM Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+
+    runs-on: ${{matrix.os-type}}
+
+    strategy:
+      matrix:
+        os-type: [windows-latest]
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Setup node.js 16.x
+      uses: actions/setup-node@v2
+      with:
+        node-version: 16.x
+    - name: Get Emscripten
+      run: ./tools/setup_emscripten_win.bat
+    - name: Build WASM
+      run: ./tools/build_wasm_win_release.bat
+    - name: Update Package
+      run: npm install
+    - name: Run Test
+      run: npm run test
