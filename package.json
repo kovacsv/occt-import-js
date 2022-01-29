@@ -8,7 +8,9 @@
 	"keywords": [
 		"3d",
 		"model",
-		"converter"
+		"converter",
+		"step",
+		"stp"
 	],
 	"devDependencies": {
 		"http-server": "^0.12.3",
