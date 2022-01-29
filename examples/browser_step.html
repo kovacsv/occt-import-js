@@ -10,14 +10,14 @@
     
     <script type='text/javascript'>
         window.onload = function () {
-			occtimportjs ().then (async function (occt) {
-				let fileUrl = '../test/testfiles/simple-basic-cube/cube.stp';
-				let response = await fetch (fileUrl);
-				let buffer = await response.arrayBuffer ();
-				let fileBuffer = new Uint8Array (buffer);
-				let result = occt.ReadStepFile (fileBuffer);
-				console.log (result);
-			});
+occtimportjs ().then (async function (occt) {
+	let fileUrl = '../test/testfiles/simple-basic-cube/cube.stp';
+	let response = await fetch (fileUrl);
+	let buffer = await response.arrayBuffer ();
+	let fileBuffer = new Uint8Array (buffer);
+	let result = occt.ReadStepFile (fileBuffer);
+	console.log (result);
+});
         };
     </script>
 </head>

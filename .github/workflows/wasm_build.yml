@@ -26,7 +26,7 @@ jobs:
     - name: Get Emscripten
       run: ./tools/setup_emscripten_win.bat
     - name: Build WASM
-      run: ./tools/build_wasm_win_release.bat
+      run: ./tools/build_wasm_win.bat Release
     - name: Update Package
       run: npm install
     - name: Run Test

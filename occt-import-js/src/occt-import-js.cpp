@@ -28,9 +28,11 @@ public:
 	virtual void OnShape (const Shape& shape) override
 	{
 		int vertexCount = 0;
+		int normalCount = 0;
 		int triangleCount = 0;
 
 		emscripten::val positionArr (emscripten::val::array ());
+		emscripten::val normalArr (emscripten::val::array ());
 		emscripten::val indexArr (emscripten::val::array ());
 		
 		shape.EnumerateFaces ([&] (const Face& face) {
@@ -41,6 +43,12 @@ public:
 				positionArr.set (vertexCount * 3 + 2, z);
 				vertexCount += 1;
 			});
+			face.EnumerateNormals ([&] (double x, double y, double z) {
+				normalArr.set (normalCount * 3, x);
+				normalArr.set (normalCount * 3 + 1, y);
+				normalArr.set (normalCount * 3 + 2, z);
+				normalCount += 1;
+			});
 			face.EnumerateTriangles ([&] (int v0, int v1, int v2) {
 				indexArr.set (triangleCount * 3, vertexOffset + v0 - 1);
 				indexArr.set (triangleCount * 3 + 1, vertexOffset + v1 - 1);
@@ -49,14 +57,20 @@ public:
 			});
 		});
 		
+		emscripten::val attributesObj (emscripten::val::object ());
+
 		emscripten::val positionObj (emscripten::val::object ());
 		positionObj.set ("array", positionArr);
+		attributesObj.set ("position", positionObj);
+
+		if (vertexCount == normalCount) {
+			emscripten::val normalObj (emscripten::val::object ());
+			normalObj.set ("array", normalArr);
+			attributesObj.set ("normal", normalObj);
+		}
 
 		emscripten::val indexObj (emscripten::val::object ());
 		indexObj.set ("array", indexArr);
-
-		emscripten::val attributesObj (emscripten::val::object ());
-		attributesObj.set ("position", positionObj);
 
 		emscripten::val meshObj (emscripten::val::object ());
 		meshObj.set ("attributes", attributesObj);
