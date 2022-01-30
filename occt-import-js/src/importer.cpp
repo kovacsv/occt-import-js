@@ -4,6 +4,8 @@
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
 #include <BRep_Tool.hxx>
+#include <GProp_GProps.hxx>
+#include <BRepGProp.hxx>
 #include <BRepMesh_IncrementalMesh.hxx>
 
 #include <iostream>
@@ -66,7 +68,7 @@ public:
 	{
 		for (Standard_Integer triangleIndex = 1; triangleIndex <= triangulation->NbTriangles (); triangleIndex++) {
 			Poly_Triangle triangle = triangulation->Triangle (triangleIndex);
-			onTriangle (triangle (1), triangle (2), triangle (3));
+			onTriangle (triangle (1) - 1, triangle (2) - 1, triangle (3) - 1);
 		}
 	}
 
@@ -92,6 +94,7 @@ public:
 			if (triangulation.IsNull () || triangulation->NbNodes () == 0 || triangulation->NbTriangles () == 0) {
 				continue;
 			}
+			triangulation->ComputeNormals ();
 			OcctFace outputFace (triangulation, location);
 			onFace (outputFace);
 		}
@@ -116,8 +119,12 @@ static Result ReadStepFile (std::istream& inputStream, Output& output)
 		TopoDS_Shape shape = stepReader.Shape (rank);
 
 		// Calculate triangulation
-		IMeshTools_Parameters parameters;
-		BRepMesh_IncrementalMesh mesh (shape, parameters);
+		GProp_GProps surfaceProps;
+		BRepGProp::SurfaceProperties (shape, surfaceProps);
+		Standard_Real surfaceArea = surfaceProps.Mass ();
+		Standard_Real linDeflection = surfaceArea / 1000000;
+		Standard_Real angDeflection = 0.5;
+		BRepMesh_IncrementalMesh mesh (shape, linDeflection, Standard_False, angDeflection);
 
 		OcctShape outputShape (shape);
 		output.OnShape (outputShape);

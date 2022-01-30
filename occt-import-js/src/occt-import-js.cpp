@@ -50,9 +50,9 @@ public:
 				normalCount += 1;
 			});
 			face.EnumerateTriangles ([&] (int v0, int v1, int v2) {
-				indexArr.set (triangleCount * 3, vertexOffset + v0 - 1);
-				indexArr.set (triangleCount * 3 + 1, vertexOffset + v1 - 1);
-				indexArr.set (triangleCount * 3 + 2, vertexOffset + v2 - 1);
+				indexArr.set (triangleCount * 3, vertexOffset + v0);
+				indexArr.set (triangleCount * 3 + 1, vertexOffset + v1);
+				indexArr.set (triangleCount * 3 + 2, vertexOffset + v2);
 				triangleCount += 1;
 			});
 		});
