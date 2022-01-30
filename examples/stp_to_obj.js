@@ -1,0 +1,62 @@
+let fs = require ('fs');
+const occtimportjs = require ('../dist/occt-import-js.js')();
+
+let args = process.argv.splice (2);
+if (args.length !== 2) {
+    process.exit (1);
+}
+
+let stpFilePath = args[0];
+let objFilePath = args[1];
+
+occtimportjs.then ((occt) => {
+	let fileContent = fs.readFileSync (stpFilePath);
+	let stpContent = occt.ReadStepFile (fileContent);
+	if (!stpContent.success) {
+        process.exit (1);
+    }
+
+    let objWriter = fs.createWriteStream (objFilePath);
+    let vertexCount = 0;
+    for (let mesh of stpContent.meshes) {
+        if (!mesh.attributes || !mesh.attributes.position || !mesh.index) {
+            continue;
+        }
+        let meshVertexCount = 0;
+        let positions = mesh.attributes.position.array;
+        for (let i = 0; i < positions.length; i += 3) {
+            objWriter.write ('v ' + positions[i] + ' ' + positions[i + 1] + ' ' + positions[i + 2] + '\n');
+            meshVertexCount += 1;
+        }
+        let hasNormals = false;
+        if (mesh.attributes.normal) {
+            let normals = mesh.attributes.normal.array;
+            hasNormals = (positions.length === normals.length);
+            if (hasNormals) {
+                for (let i = 0; i < normals.length; i += 3) {
+                    objWriter.write ('vn ' + normals[i] + ' ' + normals[i + 1] + ' ' + normals[i + 2] + '\n');
+                }
+            }
+        }
+        let indices = mesh.index.array;
+        for (let i = 0; i < indices.length; i += 3) {
+            objWriter.write ('f ');
+            let index1 = vertexCount + indices[i] + 1;
+            let index2 = vertexCount + indices[i + 1] + 1;
+            let index3 = vertexCount + indices[i + 2] + 1;
+            if (hasNormals) {
+                objWriter.write (index1 + '//' + index1 + ' ');
+                objWriter.write (index2 + '//' + index2 + ' ');
+                objWriter.write (index3 + '//' + index3 + ' ');
+            } else {
+                objWriter.write (index1 + ' ');
+                objWriter.write (index2 + ' ');
+                objWriter.write (index3 + ' ');
+            }
+            objWriter.write ('\n');
+        }
+        vertexCount += meshVertexCount;
+    }
+
+    objWriter.close ();
+});
