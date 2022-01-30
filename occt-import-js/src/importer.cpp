@@ -4,8 +4,7 @@
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
 #include <BRep_Tool.hxx>
-#include <GProp_GProps.hxx>
-#include <BRepGProp.hxx>
+#include <BRepBndLib.hxx>
 #include <BRepMesh_IncrementalMesh.hxx>
 
 #include <iostream>
@@ -115,20 +114,24 @@ static Result ReadStepFile (std::istream& inputStream, Output& output)
 	stepReader.TransferRoots ();
 	
 	output.OnBegin ();
+
 	for (Standard_Integer rank = 1; rank <= stepReader.NbShapes (); rank++) {
 		TopoDS_Shape shape = stepReader.Shape (rank);
 
 		// Calculate triangulation
-		GProp_GProps surfaceProps;
-		BRepGProp::SurfaceProperties (shape, surfaceProps);
-		Standard_Real surfaceArea = surfaceProps.Mass ();
-		Standard_Real linDeflection = surfaceArea / 1000000;
+		Bnd_Box boundingBox;
+		BRepBndLib::Add (shape, boundingBox, false);
+		Standard_Real xMin, yMin, zMin, xMax, yMax, zMax;
+		boundingBox.Get (xMin, yMin, zMin, xMax, yMax, zMax);
+		Standard_Real avgSize = ((xMax - xMin) + (yMax - yMin) + (zMax - zMin)) / 3.0;
+		Standard_Real linDeflection = avgSize / 1000.0;
 		Standard_Real angDeflection = 0.5;
 		BRepMesh_IncrementalMesh mesh (shape, linDeflection, Standard_False, angDeflection);
 
 		OcctShape outputShape (shape);
 		output.OnShape (outputShape);
 	}
+
 	output.OnEnd ();
 
 	return Result::Success;
