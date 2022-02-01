@@ -17,11 +17,13 @@ occtimportjs.then ((occt) => {
     }
 
     let objWriter = fs.createWriteStream (objFilePath);
+    let meshCount = 0;
     let vertexCount = 0;
     for (let mesh of stpContent.meshes) {
         if (!mesh.attributes || !mesh.attributes.position || !mesh.index) {
             continue;
         }
+        objWriter.write ('g Mesh' + (meshCount + 1).toString ().padStart (4, "0") + '\n');
         let meshVertexCount = 0;
         let positions = mesh.attributes.position.array;
         for (let i = 0; i < positions.length; i += 3) {
@@ -55,6 +57,7 @@ occtimportjs.then ((occt) => {
             }
             objWriter.write ('\n');
         }
+        meshCount += 1;
         vertexCount += meshVertexCount;
     }
 

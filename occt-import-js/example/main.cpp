@@ -8,7 +8,8 @@ class ConsoleOutput : public Output
 public:
 	ConsoleOutput () :
 		objFile ("result.obj"),
-		vertexCount (0)
+		vertexCount (0),
+		meshCount (0)
 	{
 		
 	}
@@ -28,10 +29,11 @@ public:
 	
 	}
 
-	virtual void OnShape (const Shape& shape) override
+	virtual void OnMesh (const Mesh& mesh) override
 	{
-		std::cout << "Shape Start" << std::endl;
-		shape.EnumerateFaces ([&] (const Face& face) {
+		std::cout << "Mesh Start" << std::endl;
+		objFile << "g " << meshCount << std::endl;
+		mesh.EnumerateFaces ([&] (const Face& face) {
 			std::uint32_t faceVertexCount = 0;
 			std::cout << "  Face Start" << std::endl;
 			face.EnumerateVertices ([&] (double x, double y, double z) {
@@ -54,11 +56,13 @@ public:
 			std::cout << "  Face End" << std::endl;
 			vertexCount += faceVertexCount;
 		});
-		std::cout << "Shape End " << std::endl;
+		std::cout << "Mesh End " << std::endl;
+		meshCount += 1;
 	}
 
 	std::ofstream		objFile;
 	std::uint32_t		vertexCount;
+	std::uint32_t		meshCount;
 };
 
 int main (int argc, const char* argv[])

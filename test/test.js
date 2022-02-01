@@ -29,19 +29,19 @@ it ('simple-basic-cube', function () {
 it ('as1_pe_203.stp', function () {
 	let result = LoadStepFile ('./test/testfiles/cax-if/as1_pe_203.stp');
 	assert (result.success);
-	assert.strictEqual (result.meshes.length, 1);
+	assert.strictEqual (result.meshes.length, 18);
 });
 
 it ('as1-oc-214.stp', function () {
 	let result = LoadStepFile ('./test/testfiles/cax-if/as1-oc-214.stp');
 	assert (result.success);
-	assert.strictEqual (result.meshes.length, 1);
+	assert.strictEqual (result.meshes.length, 18);
 });
 
 it ('as1-tu-203.stp', function () {
 	let result = LoadStepFile ('./test/testfiles/cax-if/as1-tu-203.stp');
 	assert (result.success);
-	assert.strictEqual (result.meshes.length, 1);
+	assert.strictEqual (result.meshes.length, 18);
 });
 
 });

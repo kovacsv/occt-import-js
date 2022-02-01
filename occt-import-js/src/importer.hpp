@@ -15,7 +15,7 @@ public:
 	virtual void EnumerateTriangles (const std::function<void (int, int, int)>& onTriangle) const = 0;
 };
 
-class Shape
+class Mesh
 {
 public:
 	virtual void EnumerateFaces (const std::function<void (const Face& face)>& onFace) const = 0;
@@ -26,7 +26,7 @@ class Output
 public:
 	virtual void OnBegin () = 0;
 	virtual void OnEnd () = 0;
-	virtual void OnShape (const Shape& shape) = 0;
+	virtual void OnMesh (const Mesh& Mesh) = 0;
 };
 
 enum class Result

@@ -25,7 +25,7 @@ public:
 		resultObj.set ("meshes", meshesArr);
 	}
 
-	virtual void OnShape (const Shape& shape) override
+	virtual void OnMesh (const Mesh& mesh) override
 	{
 		int vertexCount = 0;
 		int normalCount = 0;
@@ -35,7 +35,7 @@ public:
 		emscripten::val normalArr (emscripten::val::array ());
 		emscripten::val indexArr (emscripten::val::array ());
 		
-		shape.EnumerateFaces ([&] (const Face& face) {
+		mesh.EnumerateFaces ([&] (const Face& face) {
 			int vertexOffset = vertexCount;
 			face.EnumerateVertices ([&] (double x, double y, double z) {
 				positionArr.set (vertexCount * 3, x);

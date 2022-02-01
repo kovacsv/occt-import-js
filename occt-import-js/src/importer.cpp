@@ -75,10 +75,31 @@ public:
 	const TopLoc_Location&							location;
 };
 
-class OcctShape : public Shape
+class OcctMesh : public Mesh
 {
 public:
-	OcctShape (TopoDS_Shape& shape) :
+	OcctMesh ()
+	{
+	
+	}
+
+	void ProcessFace (const TopoDS_Face& face, const std::function<void (const Face& face)>& onFace) const
+	{
+		TopLoc_Location location;
+		Handle (Poly_Triangulation) triangulation = BRep_Tool::Triangulation (face, location);
+		if (triangulation.IsNull () || triangulation->NbNodes () == 0 || triangulation->NbTriangles () == 0) {
+			return;
+		}
+		triangulation->ComputeNormals ();
+		OcctFace outputFace (triangulation, location);
+		onFace (outputFace);
+	}
+};
+
+class OcctFacesMesh : public OcctMesh
+{
+public:
+	OcctFacesMesh (const TopoDS_Shape& shape) :
 		shape (shape)
 	{
 
@@ -86,20 +107,39 @@ public:
 
 	virtual void EnumerateFaces (const std::function<void (const Face& face)>& onFace) const override
 	{
-		for (TopExp_Explorer explorer (shape, TopAbs_FACE); explorer.More (); explorer.Next ()) {
-			const TopoDS_Face& face = TopoDS::Face (explorer.Current ());
-			TopLoc_Location location;
-			Handle (Poly_Triangulation) triangulation = BRep_Tool::Triangulation (face, location);
-			if (triangulation.IsNull () || triangulation->NbNodes () == 0 || triangulation->NbTriangles () == 0) {
-				continue;
-			}
-			triangulation->ComputeNormals ();
-			OcctFace outputFace (triangulation, location);
-			onFace (outputFace);
+		for (TopExp_Explorer ex (shape, TopAbs_FACE); ex.More (); ex.Next ()) {
+			const TopoDS_Face& face = TopoDS::Face (ex.Current ());
+			ProcessFace (face, onFace);
 		}
 	}
 
-	TopoDS_Shape& shape;
+	const TopoDS_Shape& shape;
+};
+
+class OcctStandaloneFacesMesh : public OcctMesh
+{
+public:
+	OcctStandaloneFacesMesh (const TopoDS_Shape& shape) :
+		shape (shape)
+	{
+
+	}
+
+	bool HasFaces () const
+	{
+		TopExp_Explorer ex (shape, TopAbs_FACE, TopAbs_SHELL);
+		return ex.More ();
+	}
+
+	virtual void EnumerateFaces (const std::function<void (const Face& face)>& onFace) const override
+	{
+		for (TopExp_Explorer ex (shape, TopAbs_FACE, TopAbs_SHELL); ex.More (); ex.Next ()) {
+			const TopoDS_Face& face = TopoDS::Face (ex.Current ());
+			ProcessFace (face, onFace);
+		}
+	}
+
+	const TopoDS_Shape& shape;
 };
 
 static Result ReadStepFile (std::istream& inputStream, Output& output)
@@ -128,8 +168,15 @@ static Result ReadStepFile (std::istream& inputStream, Output& output)
 		Standard_Real angDeflection = 0.5;
 		BRepMesh_IncrementalMesh mesh (shape, linDeflection, Standard_False, angDeflection);
 
-		OcctShape outputShape (shape);
-		output.OnShape (outputShape);
+		for (TopExp_Explorer ex (shape, TopAbs_SHELL); ex.More (); ex.Next ()) {
+			OcctFacesMesh outputShapeMesh (ex.Current ());
+			output.OnMesh (outputShapeMesh);
+		}
+
+		OcctStandaloneFacesMesh standaloneFacesMesh (shape);
+		if (standaloneFacesMesh.HasFaces ()) {
+			output.OnMesh (standaloneFacesMesh);
+		}
 	}
 
 	output.OnEnd ();
