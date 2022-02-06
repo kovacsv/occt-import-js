@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="content-type" content="text/html;charset=utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no">
+
+    <title>OcctImportJS Demo</title>
+    
+    <script type='text/javascript'>
+        window.onload = async function () {
+            let fileUrl = '../test/testfiles/simple-basic-cube/cube.stp';
+            let response = await fetch (fileUrl);
+            let buffer = await response.arrayBuffer ();
+            let fileBuffer = new Uint8Array (buffer);
+
+            var worker = new Worker ('../dist/occt-import-js-worker.js');
+            worker.onmessage = function (ev) {
+                console.log (ev.data);
+            }
+            worker.postMessage (fileBuffer);
+        };
+    </script>
+</head>
+
+<body>
+</body>
+
+</html>
