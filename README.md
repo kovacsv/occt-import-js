@@ -57,6 +57,31 @@ occtimportjs.then ((occt) => {
 });
 ```
 
+### Processing the result
+
+The result of the import is a JSON object. The `success` field tells if the import was successful. The `meshes` object is an array of [three.js](https://github.com/mrdoob/three.js) compatible mesh objects.
+
+```js
+{
+    "success": true,
+    "meshes": [
+        {
+            "attributes": {
+                "position": {
+                    "array": [...]
+                },
+                "normal": {
+                    "array": [...]
+                }
+            },
+            "index": {
+                "array": [...]
+            }
+        }
+    ]
+}
+```
+
 ## How to build on Windows?
 
 A set of batch scripts are prepared for building on Windows.
