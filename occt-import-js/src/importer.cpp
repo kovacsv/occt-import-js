@@ -1,14 +1,47 @@
 #include "importer.hpp"
 
-#include <STEPControl_Reader.hxx>
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
 #include <BRep_Tool.hxx>
 #include <BRepBndLib.hxx>
 #include <BRepMesh_IncrementalMesh.hxx>
 
+#include <STEPConstruct.hxx>
+#include <STEPConstruct_Styles.hxx>
+#include <StepShape_ShapeRepresentation.hxx>
+#include <StepVisual_StyledItem.hxx>
+#include <StepVisual_PresentationStyleByContext.hxx>
+
+#include <TDF_ChildIterator.hxx>
+#include <TDocStd_Document.hxx>
+#include <TDataStd_Name.hxx>
+#include <Quantity_Color.hxx>
+#include <STEPControl_Reader.hxx>
+#include <XCAFDoc_ColorTool.hxx>
+#include <XCAFDoc_DocumentTool.hxx>
+#include <XCAFDoc_ShapeTool.hxx>
+#include <STEPCAFControl_Reader.hxx>
+
 #include <iostream>
 #include <fstream>
+
+Color::Color () :
+	hasValue (false),
+	r (0),
+	g (0),
+	b (0)
+{
+
+}
+
+Color::Color (double r, double g, double b) :
+	hasValue (true),
+	r (r),
+	g (g),
+	b (b)
+{
+
+}
 
 class VectorBuffer : public std::streambuf
 {
@@ -27,7 +60,8 @@ public:
 class OcctFace : public Face
 {
 public:
-	OcctFace (const opencascade::handle<Poly_Triangulation>& triangulation, const TopLoc_Location& location) :
+	OcctFace (const Handle(Poly_Triangulation)& triangulation, const TopLoc_Location& location) :
+		Face (),
 		triangulation (triangulation),
 		location (location)
 	{
@@ -71,16 +105,29 @@ public:
 		}
 	}
 
-	const opencascade::handle<Poly_Triangulation>&	triangulation;
-	const TopLoc_Location&							location;
+	const Handle(Poly_Triangulation)&	triangulation;
+	const TopLoc_Location&				location;
 };
 
 class OcctMesh : public Mesh
 {
 public:
-	OcctMesh ()
+	OcctMesh (const std::string& name, const Color& color) :
+		Mesh (),
+		name (name),
+		color (color)
 	{
 	
+	}
+
+	virtual const std::string& GetName () const override
+	{
+		return name;
+	}
+
+	virtual const Color& GetColor () const override
+	{
+		return color;
 	}
 
 	void ProcessFace (const TopoDS_Face& face, const std::function<void (const Face& face)>& onFace) const
@@ -94,12 +141,17 @@ public:
 		OcctFace outputFace (triangulation, location);
 		onFace (outputFace);
 	}
+
+private:
+	std::string		name;
+	Color			color;
 };
 
 class OcctFacesMesh : public OcctMesh
 {
 public:
-	OcctFacesMesh (const TopoDS_Shape& shape) :
+	OcctFacesMesh (const TopoDS_Shape& shape, const std::string& name, const Color& color) :
+		OcctMesh (name, color),
 		shape (shape)
 	{
 
@@ -120,6 +172,7 @@ class OcctStandaloneFacesMesh : public OcctMesh
 {
 public:
 	OcctStandaloneFacesMesh (const TopoDS_Shape& shape) :
+		OcctMesh (std::string (), Color ()),
 		shape (shape)
 	{
 
@@ -142,43 +195,115 @@ public:
 	const TopoDS_Shape& shape;
 };
 
+static std::string GetLabelName (const TDF_Label& label)
+{
+	Handle(TDataStd_Name) nameAttribute = new TDataStd_Name ();
+	if (!label.FindAttribute (nameAttribute->GetID (), nameAttribute)) {
+		return "";
+	}
+	Standard_Integer utf8NameLength = nameAttribute->Get ().LengthOfCString ();
+	char* nameBuf = new char[utf8NameLength + 1];
+	nameAttribute->Get ().ToUTF8CString (nameBuf);
+	std::string name (nameBuf, utf8NameLength);
+	delete[] nameBuf;
+	return name;
+}
+
+static std::string GetShapeName (const TopoDS_Shape& shape, const Handle(XCAFDoc_ShapeTool)& shapeTool)
+{
+	TDF_Label shapeLabel;
+	if (!shapeTool->Search (shape, shapeLabel)) {
+		return "";
+	}
+	return GetLabelName (shapeLabel);
+}
+
+static Color GetShapeColor (const TopoDS_Shape& shape, const Handle(XCAFDoc_ColorTool)& colorTool)
+{
+    Quantity_Color color;
+    if (colorTool->GetColor (shape, XCAFDoc_ColorSurf, color)) {
+        return Color (color.Red (), color.Green (), color.Blue ());
+    }
+    if (colorTool->GetColor (shape, XCAFDoc_ColorCurv, color)) {
+        return Color (color.Red (), color.Green (), color.Blue ());
+    }
+    if (colorTool->GetColor (shape, XCAFDoc_ColorGen, color)) {
+        return Color (color.Red (), color.Green (), color.Blue ());
+    }
+	// TODO: handle face colors
+    return Color ();
+}
+
+static void ProcessShape (const TopoDS_Shape& shape, const Handle(XCAFDoc_ShapeTool)& shapeTool, const Handle(XCAFDoc_ColorTool)& colorTool, Output& output)
+{
+	// Calculate triangulation
+	Bnd_Box boundingBox;
+	BRepBndLib::Add (shape, boundingBox, false);
+	Standard_Real xMin, yMin, zMin, xMax, yMax, zMax;
+	boundingBox.Get (xMin, yMin, zMin, xMax, yMax, zMax);
+	Standard_Real avgSize = ((xMax - xMin) + (yMax - yMin) + (zMax - zMin)) / 3.0;
+	Standard_Real linDeflection = avgSize / 1000.0;
+	Standard_Real angDeflection = 0.5;
+	BRepMesh_IncrementalMesh mesh (shape, linDeflection, Standard_False, angDeflection);
+
+	// Enumerate solids
+	for (TopExp_Explorer ex (shape, TopAbs_SOLID); ex.More (); ex.Next ()) {
+		const TopoDS_Shape& currentShape = ex.Current ();
+		std::string meshName = GetShapeName (currentShape, shapeTool);
+		Color meshColor = GetShapeColor (currentShape, colorTool);
+		OcctFacesMesh outputShapeMesh (currentShape, meshName, meshColor);
+		output.OnMesh (outputShapeMesh);
+	}
+
+	// Enumerate shells that are not part of a solid
+	for (TopExp_Explorer ex (shape, TopAbs_SHELL, TopAbs_SOLID); ex.More (); ex.Next ()) {
+		const TopoDS_Shape& currentShape = ex.Current ();
+		std::string meshName = GetShapeName (currentShape, shapeTool);
+		Color meshColor = GetShapeColor (currentShape, colorTool);
+		OcctFacesMesh outputShapeMesh (currentShape, meshName, meshColor);
+		output.OnMesh (outputShapeMesh);
+	}
+
+	// Create a mesh from faces that are not part of a shell
+	OcctStandaloneFacesMesh standaloneFacesMesh (shape);
+	if (standaloneFacesMesh.HasFaces ()) {
+		output.OnMesh (standaloneFacesMesh);
+	}
+}
+
 static Result ReadStepFile (std::istream& inputStream, Output& output)
 {
-	STEPControl_Reader stepReader;
+	STEPCAFControl_Reader stepCafReader;
+	stepCafReader.SetColorMode (true);
+	stepCafReader.SetNameMode (true);
+
+	STEPControl_Reader& stepReader = stepCafReader.ChangeReader ();
 	std::string dummyFileName = "stp";
  	IFSelect_ReturnStatus readStatus = stepReader.ReadStream (dummyFileName.c_str (), inputStream);
 	if (readStatus != IFSelect_RetDone) {
 		return Result::ImportFailed;
 	}
 
-	stepReader.TransferRoots ();
-	
-	output.OnBegin ();
-
-	for (Standard_Integer rank = 1; rank <= stepReader.NbShapes (); rank++) {
-		TopoDS_Shape shape = stepReader.Shape (rank);
-
-		// Calculate triangulation
-		Bnd_Box boundingBox;
-		BRepBndLib::Add (shape, boundingBox, false);
-		Standard_Real xMin, yMin, zMin, xMax, yMax, zMax;
-		boundingBox.Get (xMin, yMin, zMin, xMax, yMax, zMax);
-		Standard_Real avgSize = ((xMax - xMin) + (yMax - yMin) + (zMax - zMin)) / 3.0;
-		Standard_Real linDeflection = avgSize / 1000.0;
-		Standard_Real angDeflection = 0.5;
-		BRepMesh_IncrementalMesh mesh (shape, linDeflection, Standard_False, angDeflection);
-
-		for (TopExp_Explorer ex (shape, TopAbs_SHELL); ex.More (); ex.Next ()) {
-			OcctFacesMesh outputShapeMesh (ex.Current ());
-			output.OnMesh (outputShapeMesh);
-		}
-
-		OcctStandaloneFacesMesh standaloneFacesMesh (shape);
-		if (standaloneFacesMesh.HasFaces ()) {
-			output.OnMesh (standaloneFacesMesh);
-		}
+	Handle(TDocStd_Document) document = new TDocStd_Document ("XmlXCAF");
+	if (!stepCafReader.Transfer (document)) {
+		return Result::ImportFailed;
 	}
 
+	TDF_Label mainLabel = document->Main ();
+	Handle(XCAFDoc_ShapeTool) shapeTool = XCAFDoc_DocumentTool::ShapeTool (mainLabel);
+	Handle(XCAFDoc_ColorTool) colorTool = XCAFDoc_DocumentTool::ColorTool (mainLabel);
+
+    TDF_LabelSequence labels;
+    shapeTool->GetFreeShapes (labels);
+	if (labels.IsEmpty ()) {
+		return Result::ImportFailed;
+	}
+
+	output.OnBegin ();
+	for (Standard_Integer labelIndex = 1; labelIndex <= labels.Length (); labelIndex++) {
+		TopoDS_Shape shape = shapeTool->GetShape (labels.Value (labelIndex));
+		ProcessShape (shape, shapeTool, colorTool, output);
+	}
 	output.OnEnd ();
 
 	return Result::Success;

@@ -30,6 +30,10 @@ it ('as1_pe_203.stp', function () {
 	let result = LoadStepFile ('./test/testfiles/cax-if/as1_pe_203.stp');
 	assert (result.success);
 	assert.strictEqual (result.meshes.length, 18);
+	for (let mesh of result.meshes) {
+		assert (mesh.name !== undefined);
+		assert (mesh.color !== undefined);
+	}
 });
 
 it ('as1-oc-214.stp', function () {

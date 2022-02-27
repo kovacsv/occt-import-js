@@ -73,6 +73,18 @@ public:
 		indexObj.set ("array", indexArr);
 
 		emscripten::val meshObj (emscripten::val::object ());
+		const std::string& name = mesh.GetName ();
+		if (name.length () > 0) {
+			meshObj.set ("name", mesh.GetName ());
+		}
+		const Color& color = mesh.GetColor ();
+		if (color.hasValue) {
+			emscripten::val colorArr (emscripten::val::array ());
+			colorArr.set (0, color.r);
+			colorArr.set (1, color.g);
+			colorArr.set (2, color.b);
+			meshObj.set ("color", colorArr);
+		}
 		meshObj.set ("attributes", attributesObj);
 		meshObj.set ("index", indexObj);
 

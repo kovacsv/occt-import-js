@@ -5,6 +5,18 @@
 #include <vector>
 #include <functional>
 
+class Color
+{
+public:
+	Color ();
+	Color (double r, double g, double b);
+
+	bool hasValue;
+	double r;
+	double g;
+	double b;
+};
+
 class Face
 {
 public:
@@ -18,7 +30,9 @@ public:
 class Mesh
 {
 public:
-	virtual void EnumerateFaces (const std::function<void (const Face& face)>& onFace) const = 0;
+	virtual const std::string&	GetName () const = 0;
+	virtual const Color&		GetColor () const = 0;
+	virtual void				EnumerateFaces (const std::function<void (const Face& face)>& onFace) const = 0;
 };
 
 class Output
