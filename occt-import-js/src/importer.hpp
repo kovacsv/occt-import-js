@@ -21,6 +21,7 @@ class Face
 {
 public:
 	virtual bool HasNormals () const = 0;
+	virtual Color GetColor () const = 0;
 
 	virtual void EnumerateVertices (const std::function<void (double, double, double)>& onVertex) const = 0;
 	virtual void EnumerateNormals (const std::function<void (double, double, double)>& onNormal) const = 0;
@@ -30,9 +31,9 @@ public:
 class Mesh
 {
 public:
-	virtual const std::string&	GetName () const = 0;
-	virtual const Color&		GetColor () const = 0;
-	virtual void				EnumerateFaces (const std::function<void (const Face& face)>& onFace) const = 0;
+	virtual std::string		GetName () const = 0;
+	virtual Color			GetColor () const = 0;
+	virtual void			EnumerateFaces (const std::function<void (const Face& face)>& onFace) const = 0;
 };
 
 class Output

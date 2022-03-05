@@ -30,12 +30,15 @@ public:
 		int vertexCount = 0;
 		int normalCount = 0;
 		int triangleCount = 0;
+		int faceColorCount = 0;
 
 		emscripten::val positionArr (emscripten::val::array ());
 		emscripten::val normalArr (emscripten::val::array ());
 		emscripten::val indexArr (emscripten::val::array ());
-		
+		emscripten::val faceColorArr (emscripten::val::array ());
+
 		mesh.EnumerateFaces ([&] (const Face& face) {
+			int triangleOffset = triangleCount;
 			int vertexOffset = vertexCount;
 			face.EnumerateVertices ([&] (double x, double y, double z) {
 				positionArr.set (vertexCount * 3, x);
@@ -55,7 +58,39 @@ public:
 				indexArr.set (triangleCount * 3 + 2, vertexOffset + v2);
 				triangleCount += 1;
 			});
+			Color faceColor = face.GetColor ();
+			if (faceColor.hasValue) {
+				emscripten::val faceColorObj (emscripten::val::object ());
+				faceColorObj.set ("first", triangleOffset);
+				faceColorObj.set ("last", triangleCount - 1);
+				emscripten::val colorArr (emscripten::val::array ());
+				colorArr.set (0, faceColor.r);
+				colorArr.set (1, faceColor.g);
+				colorArr.set (2, faceColor.b);
+				faceColorObj.set ("color", colorArr);
+				faceColorArr.set (faceColorCount, faceColorObj);
+				faceColorCount += 1;
+			}
 		});
+
+		emscripten::val meshObj (emscripten::val::object ());
+		std::string name = mesh.GetName ();
+		if (name.length () > 0) {
+			meshObj.set ("name", mesh.GetName ());
+		}
+
+		Color color = mesh.GetColor ();
+		if (color.hasValue) {
+			emscripten::val colorArr (emscripten::val::array ());
+			colorArr.set (0, color.r);
+			colorArr.set (1, color.g);
+			colorArr.set (2, color.b);
+			meshObj.set ("color", colorArr);
+		}
+
+		if (faceColorCount > 0) {
+			meshObj.set ("face_colors", faceColorArr);
+		}
 		
 		emscripten::val attributesObj (emscripten::val::object ());
 
@@ -72,19 +107,6 @@ public:
 		emscripten::val indexObj (emscripten::val::object ());
 		indexObj.set ("array", indexArr);
 
-		emscripten::val meshObj (emscripten::val::object ());
-		const std::string& name = mesh.GetName ();
-		if (name.length () > 0) {
-			meshObj.set ("name", mesh.GetName ());
-		}
-		const Color& color = mesh.GetColor ();
-		if (color.hasValue) {
-			emscripten::val colorArr (emscripten::val::array ());
-			colorArr.set (0, color.r);
-			colorArr.set (1, color.g);
-			colorArr.set (2, color.b);
-			meshObj.set ("color", colorArr);
-		}
 		meshObj.set ("attributes", attributesObj);
 		meshObj.set ("index", indexObj);
 

@@ -25,176 +25,6 @@
 #include <iostream>
 #include <fstream>
 
-Color::Color () :
-	hasValue (false),
-	r (0),
-	g (0),
-	b (0)
-{
-
-}
-
-Color::Color (double r, double g, double b) :
-	hasValue (true),
-	r (r),
-	g (g),
-	b (b)
-{
-
-}
-
-class VectorBuffer : public std::streambuf
-{
-public:
-    VectorBuffer (const std::vector<uint8_t>& v)
-	{
-        setg ((char*) v.data (), (char*) v.data (), (char*) (v.data () + v.size ()));
-    }
-
-    ~VectorBuffer ()
-	{
-
-	}
-};
-
-class OcctFace : public Face
-{
-public:
-	OcctFace (const Handle(Poly_Triangulation)& triangulation, const TopLoc_Location& location) :
-		Face (),
-		triangulation (triangulation),
-		location (location)
-	{
-
-	}
-
-	virtual bool HasNormals () const override
-	{
-		return triangulation->HasNormals ();
-	}
-
-	virtual void EnumerateVertices (const std::function<void (double, double, double)>& onVertex) const override
-	{
-		gp_Trsf transformation = location.Transformation ();
-		for (Standard_Integer nodeIndex = 1; nodeIndex <= triangulation->NbNodes (); nodeIndex++) {
-			gp_Pnt vertex = triangulation->Node (nodeIndex);
-			vertex.Transform (transformation);
-			onVertex (vertex.X (), vertex.Y (), vertex.Z ());
-		}
-	}
-
-	virtual void EnumerateNormals (const std::function<void (double, double, double)>& onNormal) const override
-	{
-		if (!triangulation->HasNormals ()) {
-			return;
-		}
-
-		gp_Trsf transformation = location.Transformation ();
-		for (Standard_Integer nodeIndex = 1; nodeIndex <= triangulation->NbNodes (); nodeIndex++) {
-			gp_Dir normal = triangulation->Normal (nodeIndex);
-			normal.Transform (transformation);
-			onNormal (normal.X (), normal.Y (), normal.Z ());
-		}
-	}
-
-	virtual void EnumerateTriangles (const std::function<void (int, int, int)>& onTriangle) const override
-	{
-		for (Standard_Integer triangleIndex = 1; triangleIndex <= triangulation->NbTriangles (); triangleIndex++) {
-			Poly_Triangle triangle = triangulation->Triangle (triangleIndex);
-			onTriangle (triangle (1) - 1, triangle (2) - 1, triangle (3) - 1);
-		}
-	}
-
-	const Handle(Poly_Triangulation)&	triangulation;
-	const TopLoc_Location&				location;
-};
-
-class OcctMesh : public Mesh
-{
-public:
-	OcctMesh (const std::string& name, const Color& color) :
-		Mesh (),
-		name (name),
-		color (color)
-	{
-	
-	}
-
-	virtual const std::string& GetName () const override
-	{
-		return name;
-	}
-
-	virtual const Color& GetColor () const override
-	{
-		return color;
-	}
-
-	void ProcessFace (const TopoDS_Face& face, const std::function<void (const Face& face)>& onFace) const
-	{
-		TopLoc_Location location;
-		Handle (Poly_Triangulation) triangulation = BRep_Tool::Triangulation (face, location);
-		if (triangulation.IsNull () || triangulation->NbNodes () == 0 || triangulation->NbTriangles () == 0) {
-			return;
-		}
-		triangulation->ComputeNormals ();
-		OcctFace outputFace (triangulation, location);
-		onFace (outputFace);
-	}
-
-private:
-	std::string		name;
-	Color			color;
-};
-
-class OcctFacesMesh : public OcctMesh
-{
-public:
-	OcctFacesMesh (const TopoDS_Shape& shape, const std::string& name, const Color& color) :
-		OcctMesh (name, color),
-		shape (shape)
-	{
-
-	}
-
-	virtual void EnumerateFaces (const std::function<void (const Face& face)>& onFace) const override
-	{
-		for (TopExp_Explorer ex (shape, TopAbs_FACE); ex.More (); ex.Next ()) {
-			const TopoDS_Face& face = TopoDS::Face (ex.Current ());
-			ProcessFace (face, onFace);
-		}
-	}
-
-	const TopoDS_Shape& shape;
-};
-
-class OcctStandaloneFacesMesh : public OcctMesh
-{
-public:
-	OcctStandaloneFacesMesh (const TopoDS_Shape& shape) :
-		OcctMesh (std::string (), Color ()),
-		shape (shape)
-	{
-
-	}
-
-	bool HasFaces () const
-	{
-		TopExp_Explorer ex (shape, TopAbs_FACE, TopAbs_SHELL);
-		return ex.More ();
-	}
-
-	virtual void EnumerateFaces (const std::function<void (const Face& face)>& onFace) const override
-	{
-		for (TopExp_Explorer ex (shape, TopAbs_FACE, TopAbs_SHELL); ex.More (); ex.Next ()) {
-			const TopoDS_Face& face = TopoDS::Face (ex.Current ());
-			ProcessFace (face, onFace);
-		}
-	}
-
-	const TopoDS_Shape& shape;
-};
-
 static std::string GetLabelName (const TDF_Label& label)
 {
 	Handle(TDataStd_Name) nameAttribute = new TDataStd_Name ();
@@ -230,9 +60,197 @@ static Color GetShapeColor (const TopoDS_Shape& shape, const Handle(XCAFDoc_Colo
     if (colorTool->GetColor (shape, XCAFDoc_ColorGen, color)) {
         return Color (color.Red (), color.Green (), color.Blue ());
     }
-	// TODO: handle face colors
     return Color ();
 }
+
+Color::Color () :
+	hasValue (false),
+	r (0),
+	g (0),
+	b (0)
+{
+
+}
+
+Color::Color (double r, double g, double b) :
+	hasValue (true),
+	r (r),
+	g (g),
+	b (b)
+{
+
+}
+
+class VectorBuffer : public std::streambuf
+{
+public:
+    VectorBuffer (const std::vector<uint8_t>& v)
+	{
+        setg ((char*) v.data (), (char*) v.data (), (char*) (v.data () + v.size ()));
+    }
+
+    ~VectorBuffer ()
+	{
+
+	}
+};
+
+class OcctFace : public Face
+{
+public:
+	OcctFace (const TopoDS_Face& face, const Handle(XCAFDoc_ColorTool)& colorTool) :
+		Face (),
+		face (face),
+		colorTool (colorTool)
+	{
+		triangulation = BRep_Tool::Triangulation (face, location);
+		if (HasTriangulation ()) {
+			triangulation->ComputeNormals ();
+		}
+	}
+
+	virtual bool HasNormals () const override
+	{
+		return HasTriangulation () && triangulation->HasNormals ();
+	}
+
+	virtual Color GetColor () const override
+	{
+		return GetShapeColor ((const TopoDS_Shape&) face, colorTool);
+	}
+
+	virtual void EnumerateVertices (const std::function<void (double, double, double)>& onVertex) const override
+	{
+		if (!HasTriangulation ()) {
+			return;
+		}
+
+		gp_Trsf transformation = location.Transformation ();
+		for (Standard_Integer nodeIndex = 1; nodeIndex <= triangulation->NbNodes (); nodeIndex++) {
+			gp_Pnt vertex = triangulation->Node (nodeIndex);
+			vertex.Transform (transformation);
+			onVertex (vertex.X (), vertex.Y (), vertex.Z ());
+		}
+	}
+
+	virtual void EnumerateNormals (const std::function<void (double, double, double)>& onNormal) const override
+	{
+		if (!HasTriangulation () || !triangulation->HasNormals ()) {
+			return;
+		}
+
+		gp_Trsf transformation = location.Transformation ();
+		for (Standard_Integer nodeIndex = 1; nodeIndex <= triangulation->NbNodes (); nodeIndex++) {
+			gp_Dir normal = triangulation->Normal (nodeIndex);
+			normal.Transform (transformation);
+			onNormal (normal.X (), normal.Y (), normal.Z ());
+		}
+	}
+
+	virtual void EnumerateTriangles (const std::function<void (int, int, int)>& onTriangle) const override
+	{
+		if (!HasTriangulation ()) {
+			return;
+		}
+
+		for (Standard_Integer triangleIndex = 1; triangleIndex <= triangulation->NbTriangles (); triangleIndex++) {
+			Poly_Triangle triangle = triangulation->Triangle (triangleIndex);
+			onTriangle (triangle (1) - 1, triangle (2) - 1, triangle (3) - 1);
+		}
+	}
+
+private:
+	bool HasTriangulation () const
+	{
+		if (triangulation.IsNull () || triangulation->NbNodes () == 0 || triangulation->NbTriangles () == 0) {
+			return false;
+		}
+		return true;
+	}
+
+	const TopoDS_Face&					face;
+	const Handle(XCAFDoc_ColorTool)&	colorTool;
+	Handle(Poly_Triangulation)			triangulation;
+	TopLoc_Location						location;
+};
+
+class OcctFacesMesh : public Mesh
+{
+public:
+	OcctFacesMesh (const TopoDS_Shape& shape, const Handle(XCAFDoc_ShapeTool)& shapeTool, const Handle(XCAFDoc_ColorTool)& colorTool) :
+		Mesh (),
+		shape (shape),
+		shapeTool (shapeTool),
+		colorTool (colorTool)
+	{
+
+	}
+
+	virtual std::string GetName () const override
+	{
+		return GetShapeName (shape, shapeTool);
+	}
+
+	virtual Color GetColor () const override
+	{
+		return GetShapeColor (shape, colorTool);
+	}
+
+	virtual void EnumerateFaces (const std::function<void (const Face& face)>& onFace) const override
+	{
+		for (TopExp_Explorer ex (shape, TopAbs_FACE); ex.More (); ex.Next ()) {
+			const TopoDS_Face& face = TopoDS::Face (ex.Current ());
+			OcctFace outputFace (face, colorTool);
+			onFace (outputFace);
+		}
+	}
+
+private:
+	const TopoDS_Shape& shape;
+	const Handle(XCAFDoc_ShapeTool)& shapeTool;
+	const Handle(XCAFDoc_ColorTool)& colorTool;
+};
+
+class OcctStandaloneFacesMesh : public Mesh
+{
+public:
+	OcctStandaloneFacesMesh (const TopoDS_Shape& shape, const Handle(XCAFDoc_ColorTool)& colorTool) :
+		Mesh (),
+		shape (shape),
+		colorTool (colorTool)
+	{
+
+	}
+
+	bool HasFaces () const
+	{
+		TopExp_Explorer ex (shape, TopAbs_FACE, TopAbs_SHELL);
+		return ex.More ();
+	}
+
+	virtual std::string GetName () const override
+	{
+		return std::string ();
+	}
+
+	virtual Color GetColor () const override
+	{
+		return Color ();
+	}
+
+	virtual void EnumerateFaces (const std::function<void (const Face& face)>& onFace) const override
+	{
+		for (TopExp_Explorer ex (shape, TopAbs_FACE, TopAbs_SHELL); ex.More (); ex.Next ()) {
+			const TopoDS_Face& face = TopoDS::Face (ex.Current ());
+			OcctFace outputFace (face, colorTool);
+			onFace (outputFace);
+		}
+	}
+
+private:
+	const TopoDS_Shape& shape;
+	const Handle(XCAFDoc_ColorTool)& colorTool;
+};
 
 static void ProcessShape (const TopoDS_Shape& shape, const Handle(XCAFDoc_ShapeTool)& shapeTool, const Handle(XCAFDoc_ColorTool)& colorTool, Output& output)
 {
@@ -249,23 +267,19 @@ static void ProcessShape (const TopoDS_Shape& shape, const Handle(XCAFDoc_ShapeT
 	// Enumerate solids
 	for (TopExp_Explorer ex (shape, TopAbs_SOLID); ex.More (); ex.Next ()) {
 		const TopoDS_Shape& currentShape = ex.Current ();
-		std::string meshName = GetShapeName (currentShape, shapeTool);
-		Color meshColor = GetShapeColor (currentShape, colorTool);
-		OcctFacesMesh outputShapeMesh (currentShape, meshName, meshColor);
+		OcctFacesMesh outputShapeMesh (currentShape, shapeTool, colorTool);
 		output.OnMesh (outputShapeMesh);
 	}
 
 	// Enumerate shells that are not part of a solid
 	for (TopExp_Explorer ex (shape, TopAbs_SHELL, TopAbs_SOLID); ex.More (); ex.Next ()) {
 		const TopoDS_Shape& currentShape = ex.Current ();
-		std::string meshName = GetShapeName (currentShape, shapeTool);
-		Color meshColor = GetShapeColor (currentShape, colorTool);
-		OcctFacesMesh outputShapeMesh (currentShape, meshName, meshColor);
+		OcctFacesMesh outputShapeMesh (currentShape, shapeTool, colorTool);
 		output.OnMesh (outputShapeMesh);
 	}
 
 	// Create a mesh from faces that are not part of a shell
-	OcctStandaloneFacesMesh standaloneFacesMesh (shape);
+	OcctStandaloneFacesMesh standaloneFacesMesh (shape, colorTool);
 	if (standaloneFacesMesh.HasFaces ()) {
 		output.OnMesh (standaloneFacesMesh);
 	}
