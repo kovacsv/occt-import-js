@@ -60,28 +60,23 @@ occtimportjs.then ((occt) => {
 
 ### Processing the result
 
-The result of the import is a JSON object. The `success` field tells if the import was successful. The `meshes` object is an array of [three.js](https://github.com/mrdoob/three.js) compatible mesh objects.
+The result of the import is a JSON object with the following structure.
 
-```js
-{
-    "success": true,
-    "meshes": [
-        {
-            "attributes": {
-                "position": {
-                    "array": [...]
-                },
-                "normal": {
-                    "array": [...]
-                }
-            },
-            "index": {
-                "array": [...]
-            }
-        }
-    ]
-}
-```
+- **success** (boolean): Tells if the import was successful.
+- **meshes** (array): Array of mesh objects. The geometry representation is compatible with [three.js](https://github.com/mrdoob/three.js).
+  - **name** (string, optional): Name of the mesh.
+  - **color** (array, optional): Array of r, g, and b values of the mesh color.
+  - **face_colors** (array, optional): Array of face color groups.
+    - **first** (number): The first triangle index with this color.
+    - **last** (number): The last triangle index with this color.
+    - **color** (array, optional): Array of r, g, and b values of the color.
+  - **attributes** (object)
+    - **position** (object)
+      - **array** (array): Array of number triplets defining the vertex positions.
+    - **normal** (object, optional)
+      - **array** (array): Array of number triplets defining the normal vectors.
+  - **index** (object):
+    - **array** (array): Array of number triplets defining triangles by indices.
 
 ## How to build on Windows?
 
