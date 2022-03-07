@@ -2,6 +2,7 @@
 
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
+#include <TopoDS_Face.hxx>
 #include <BRep_Tool.hxx>
 #include <BRepBndLib.hxx>
 #include <BRepMesh_IncrementalMesh.hxx>
@@ -139,11 +140,16 @@ public:
 			return;
 		}
 
+		bool isReversed = (face.Orientation () == TopAbs_REVERSED);
 		gp_Trsf transformation = location.Transformation ();
 		for (Standard_Integer nodeIndex = 1; nodeIndex <= triangulation->NbNodes (); nodeIndex++) {
 			gp_Dir normal = triangulation->Normal (nodeIndex);
 			normal.Transform (transformation);
-			onNormal (normal.X (), normal.Y (), normal.Z ());
+			if (isReversed) {
+				onNormal (-normal.X (), -normal.Y (), -normal.Z ());
+			} else {
+				onNormal (normal.X (), normal.Y (), normal.Z ());
+			}
 		}
 	}
 
@@ -153,9 +159,14 @@ public:
 			return;
 		}
 
+		bool isReversed = (face.Orientation () == TopAbs_REVERSED);
 		for (Standard_Integer triangleIndex = 1; triangleIndex <= triangulation->NbTriangles (); triangleIndex++) {
 			Poly_Triangle triangle = triangulation->Triangle (triangleIndex);
-			onTriangle (triangle (1) - 1, triangle (2) - 1, triangle (3) - 1);
+			if (isReversed) {
+				onTriangle (triangle (1) - 1, triangle (3) - 1, triangle (2) - 1);
+			} else {
+				onTriangle (triangle (1) - 1, triangle (2) - 1, triangle (3) - 1);
+			}
 		}
 	}
 
