@@ -51,17 +51,17 @@ static std::string GetShapeName (const TopoDS_Shape& shape, const Handle(XCAFDoc
 
 static Color GetShapeColor (const TopoDS_Shape& shape, const Handle(XCAFDoc_ColorTool)& colorTool)
 {
-    Quantity_Color color;
-    if (colorTool->GetColor (shape, XCAFDoc_ColorSurf, color)) {
-        return Color (color.Red (), color.Green (), color.Blue ());
-    }
-    if (colorTool->GetColor (shape, XCAFDoc_ColorCurv, color)) {
-        return Color (color.Red (), color.Green (), color.Blue ());
-    }
-    if (colorTool->GetColor (shape, XCAFDoc_ColorGen, color)) {
-        return Color (color.Red (), color.Green (), color.Blue ());
-    }
-    return Color ();
+	Quantity_Color color;
+	if (colorTool->GetColor (shape, XCAFDoc_ColorSurf, color)) {
+		return Color (color.Red (), color.Green (), color.Blue ());
+	}
+	if (colorTool->GetColor (shape, XCAFDoc_ColorCurv, color)) {
+		return Color (color.Red (), color.Green (), color.Blue ());
+	}
+	if (colorTool->GetColor (shape, XCAFDoc_ColorGen, color)) {
+		return Color (color.Red (), color.Green (), color.Blue ());
+	}
+	return Color ();
 }
 
 Color::Color () :
@@ -85,12 +85,12 @@ Color::Color (double r, double g, double b) :
 class VectorBuffer : public std::streambuf
 {
 public:
-    VectorBuffer (const std::vector<uint8_t>& v)
+	VectorBuffer (const std::vector<uint8_t>& v)
 	{
-        setg ((char*) v.data (), (char*) v.data (), (char*) (v.data () + v.size ()));
-    }
+		setg ((char*) v.data (), (char*) v.data (), (char*) (v.data () + v.size ()));
+	}
 
-    ~VectorBuffer ()
+	~VectorBuffer ()
 	{
 
 	}
@@ -318,8 +318,8 @@ static Result ReadStepFile (std::istream& inputStream, Output& output)
 	Handle(XCAFDoc_ShapeTool) shapeTool = XCAFDoc_DocumentTool::ShapeTool (mainLabel);
 	Handle(XCAFDoc_ColorTool) colorTool = XCAFDoc_DocumentTool::ColorTool (mainLabel);
 
-    TDF_LabelSequence labels;
-    shapeTool->GetFreeShapes (labels);
+	TDF_LabelSequence labels;
+	shapeTool->GetFreeShapes (labels);
 	if (labels.IsEmpty ()) {
 		return Result::ImportFailed;
 	}
@@ -347,7 +347,7 @@ Result ReadStepFile (const std::string& filePath, Output& output)
 
 Result ReadStepFile (const std::vector<std::uint8_t>& fileContent, Output& output)
 {
-    VectorBuffer fileBuffer (fileContent);
+	VectorBuffer fileBuffer (fileContent);
 	std::istream fileStream (&fileBuffer);
 	return ReadStepFile (fileStream, output);
 }
