@@ -268,6 +268,10 @@ static void ProcessShape (const TopoDS_Shape& shape, const Handle(XCAFDoc_ShapeT
 	// Calculate triangulation
 	Bnd_Box boundingBox;
 	BRepBndLib::Add (shape, boundingBox, false);
+	if (boundingBox.IsVoid ()) {
+		return;
+	}
+
 	Standard_Real xMin, yMin, zMin, xMax, yMax, zMax;
 	boundingBox.Get (xMin, yMin, zMin, xMax, yMax, zMax);
 	Standard_Real avgSize = ((xMax - xMin) + (yMax - yMin) + (zMax - zMin)) / 3.0;
