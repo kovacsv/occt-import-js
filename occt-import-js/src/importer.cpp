@@ -263,95 +263,147 @@ private:
 	const Handle(XCAFDoc_ColorTool)& colorTool;
 };
 
-static void ProcessShape (const TopoDS_Shape& shape, const Handle(XCAFDoc_ShapeTool)& shapeTool, const Handle(XCAFDoc_ColorTool)& colorTool, Output& output)
+class ImporterImpl
 {
-	// Calculate triangulation
-	Bnd_Box boundingBox;
-	BRepBndLib::Add (shape, boundingBox, false);
-	if (boundingBox.IsVoid ()) {
-		return;
+public:
+	ImporterImpl () :
+		document (nullptr),
+		shapeTool (nullptr),
+		colorTool (nullptr)
+	{
+
 	}
 
-	Standard_Real xMin, yMin, zMin, xMax, yMax, zMax;
-	boundingBox.Get (xMin, yMin, zMin, xMax, yMax, zMax);
-	Standard_Real avgSize = ((xMax - xMin) + (yMax - yMin) + (zMax - zMin)) / 3.0;
-	Standard_Real linDeflection = avgSize / 1000.0;
-	Standard_Real angDeflection = 0.5;
-	BRepMesh_IncrementalMesh mesh (shape, linDeflection, Standard_False, angDeflection);
-
-	// Enumerate solids
-	for (TopExp_Explorer ex (shape, TopAbs_SOLID); ex.More (); ex.Next ()) {
-		const TopoDS_Shape& currentShape = ex.Current ();
-		OcctFacesMesh outputShapeMesh (currentShape, shapeTool, colorTool);
-		output.OnMesh (outputShapeMesh);
+	Importer::Result LoadStepFile (const std::string& filePath)
+	{
+		std::ifstream inputStream (filePath, std::ios::binary);
+		if (!inputStream.is_open ()) {
+			return Importer::Result::FileNotFound;
+		}
+		Importer::Result result = LoadStepFile (inputStream);
+		inputStream.close ();
+		return result;
 	}
 
-	// Enumerate shells that are not part of a solid
-	for (TopExp_Explorer ex (shape, TopAbs_SHELL, TopAbs_SOLID); ex.More (); ex.Next ()) {
-		const TopoDS_Shape& currentShape = ex.Current ();
-		OcctFacesMesh outputShapeMesh (currentShape, shapeTool, colorTool);
-		output.OnMesh (outputShapeMesh);
+	Importer::Result LoadStepFile (const std::vector<std::uint8_t>& fileContent)
+	{
+		VectorBuffer fileBuffer (fileContent);
+		std::istream fileStream (&fileBuffer);
+		return LoadStepFile (fileStream);
 	}
 
-	// Create a mesh from faces that are not part of a shell
-	OcctStandaloneFacesMesh standaloneFacesMesh (shape, colorTool);
-	if (standaloneFacesMesh.HasFaces ()) {
-		output.OnMesh (standaloneFacesMesh);
+	Importer::Result LoadStepFile (std::istream& inputStream)
+	{
+		STEPCAFControl_Reader stepCafReader;
+		stepCafReader.SetColorMode (true);
+		stepCafReader.SetNameMode (true);
+
+		STEPControl_Reader& stepReader = stepCafReader.ChangeReader ();
+		std::string dummyFileName = "stp";
+ 		IFSelect_ReturnStatus readStatus = stepReader.ReadStream (dummyFileName.c_str (), inputStream);
+		if (readStatus != IFSelect_RetDone) {
+			return Importer::Result::ImportFailed;
+		}
+
+		document = new TDocStd_Document ("XmlXCAF");
+		if (!stepCafReader.Transfer (document)) {
+			return Importer::Result::ImportFailed;
+		}
+
+		TDF_Label mainLabel = document->Main ();
+		shapeTool = XCAFDoc_DocumentTool::ShapeTool (mainLabel);
+		colorTool = XCAFDoc_DocumentTool::ColorTool (mainLabel);
+
+		TDF_LabelSequence labels;
+		shapeTool->GetFreeShapes (labels);
+		if (labels.IsEmpty ()) {
+			return Importer::Result::ImportFailed;
+		}
+
+		return Importer::Result::Success;
 	}
+
+	void EnumerateMeshes (const std::function<void (const Mesh&)>& onMesh)
+	{
+		TDF_LabelSequence labels;
+		shapeTool->GetFreeShapes (labels);
+
+		for (Standard_Integer labelIndex = 1; labelIndex <= labels.Length (); labelIndex++) {
+			TopoDS_Shape shape = shapeTool->GetShape (labels.Value (labelIndex));
+			ProcessShape (shape, onMesh);
+		}
+	}
+
+private:
+	void ProcessShape (const TopoDS_Shape& shape, const std::function<void (const Mesh&)>& onMesh) const
+	{
+		Bnd_Box boundingBox;
+		BRepBndLib::Add (shape, boundingBox, false);
+		if (boundingBox.IsVoid ()) {
+			return;
+		}
+
+		// Calculate triangulation
+		Standard_Real xMin, yMin, zMin, xMax, yMax, zMax;
+		boundingBox.Get (xMin, yMin, zMin, xMax, yMax, zMax);
+		Standard_Real avgSize = ((xMax - xMin) + (yMax - yMin) + (zMax - zMin)) / 3.0;
+		Standard_Real linDeflection = avgSize / 1000.0;
+		Standard_Real angDeflection = 0.5;
+		BRepMesh_IncrementalMesh mesh (shape, linDeflection, Standard_False, angDeflection);
+
+		// Enumerate solids
+		for (TopExp_Explorer ex (shape, TopAbs_SOLID); ex.More (); ex.Next ()) {
+			const TopoDS_Shape& currentShape = ex.Current ();
+			OcctFacesMesh outputShapeMesh (currentShape, shapeTool, colorTool);
+			onMesh (outputShapeMesh);
+		}
+
+		// Enumerate shells that are not part of a solid
+		for (TopExp_Explorer ex (shape, TopAbs_SHELL, TopAbs_SOLID); ex.More (); ex.Next ()) {
+			const TopoDS_Shape& currentShape = ex.Current ();
+			OcctFacesMesh outputShapeMesh (currentShape, shapeTool, colorTool);
+			onMesh (outputShapeMesh);
+		}
+
+		// Create a mesh from faces that are not part of a shell
+		OcctStandaloneFacesMesh standaloneFacesMesh (shape, colorTool);
+		if (standaloneFacesMesh.HasFaces ()) {
+			onMesh (standaloneFacesMesh);
+		}
+	}
+
+	Handle(TDocStd_Document) document;
+	Handle(XCAFDoc_ShapeTool) shapeTool;
+	Handle(XCAFDoc_ColorTool) colorTool;
+};
+
+Importer::Importer () :
+	impl (new ImporterImpl ())
+{
+
 }
 
-static Result ReadStepFile (std::istream& inputStream, Output& output)
+Importer::~Importer ()
 {
-	STEPCAFControl_Reader stepCafReader;
-	stepCafReader.SetColorMode (true);
-	stepCafReader.SetNameMode (true);
-
-	STEPControl_Reader& stepReader = stepCafReader.ChangeReader ();
-	std::string dummyFileName = "stp";
- 	IFSelect_ReturnStatus readStatus = stepReader.ReadStream (dummyFileName.c_str (), inputStream);
-	if (readStatus != IFSelect_RetDone) {
-		return Result::ImportFailed;
-	}
-
-	Handle(TDocStd_Document) document = new TDocStd_Document ("XmlXCAF");
-	if (!stepCafReader.Transfer (document)) {
-		return Result::ImportFailed;
-	}
-
-	TDF_Label mainLabel = document->Main ();
-	Handle(XCAFDoc_ShapeTool) shapeTool = XCAFDoc_DocumentTool::ShapeTool (mainLabel);
-	Handle(XCAFDoc_ColorTool) colorTool = XCAFDoc_DocumentTool::ColorTool (mainLabel);
-
-	TDF_LabelSequence labels;
-	shapeTool->GetFreeShapes (labels);
-	if (labels.IsEmpty ()) {
-		return Result::ImportFailed;
-	}
-
-	output.OnBegin ();
-	for (Standard_Integer labelIndex = 1; labelIndex <= labels.Length (); labelIndex++) {
-		TopoDS_Shape shape = shapeTool->GetShape (labels.Value (labelIndex));
-		ProcessShape (shape, shapeTool, colorTool, output);
-	}
-	output.OnEnd ();
-
-	return Result::Success;
+	delete impl;
 }
 
-Result ReadStepFile (const std::string& filePath, Output& output)
+Importer::Result Importer::LoadStepFile (const std::string& filePath)
 {
-	std::ifstream inputStream (filePath, std::ios::binary);
-	if (!inputStream.is_open ()) {
-		return Result::FileNotFound;
-	}
-	Result result = ReadStepFile (inputStream, output);
-	inputStream.close ();
-	return result;
+	return impl->LoadStepFile (filePath);
 }
 
-Result ReadStepFile (const std::vector<std::uint8_t>& fileContent, Output& output)
+Importer::Result Importer::LoadStepFile (std::istream& inputStream)
 {
-	VectorBuffer fileBuffer (fileContent);
-	std::istream fileStream (&fileBuffer);
-	return ReadStepFile (fileStream, output);
+	return impl->LoadStepFile (inputStream);
+}
+
+Importer::Result Importer::LoadStepFile (const std::vector<std::uint8_t>& fileContent)
+{
+	return impl->LoadStepFile (fileContent);
+}
+
+void Importer::EnumerateMeshes (const std::function<void (const Mesh&)>& onMesh)
+{
+	return impl->EnumerateMeshes (onMesh);
 }

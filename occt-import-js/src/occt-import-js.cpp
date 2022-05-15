@@ -4,29 +4,21 @@
 #include "importer.hpp"
 #include <emscripten/bind.h>
 
-class EmscriptenOutput : public Output
+emscripten::val ReadStepFile (const emscripten::val& content)
 {
-public:
-	EmscriptenOutput () :
-		resultObj (emscripten::val::object ()),
-		meshesArr (emscripten::val::array ()),
-		meshIndex (0)
-	{
-		
+	emscripten::val resultObj (emscripten::val::object ());
+	
+	Importer importer;
+	const std::vector<uint8_t>& contentArr = emscripten::vecFromJSArray<std::uint8_t> (content);
+	Importer::Result importResult = importer.LoadStepFile (contentArr);
+	resultObj.set ("success", importResult == Importer::Result::Success);
+	if (importResult != Importer::Result::Success) {
+		return resultObj;
 	}
 
-	virtual void OnBegin () override
-	{
-
-	}
-
-	virtual void OnEnd () override
-	{
-		resultObj.set ("meshes", meshesArr);
-	}
-
-	virtual void OnMesh (const Mesh& mesh) override
-	{
+	int meshIndex = 0;
+	emscripten::val meshesArr (emscripten::val::array ());
+	importer.EnumerateMeshes ([&] (const Mesh& mesh) {
 		int vertexCount = 0;
 		int normalCount = 0;
 		int triangleCount = 0;
@@ -40,19 +32,19 @@ public:
 		mesh.EnumerateFaces ([&] (const Face& face) {
 			int triangleOffset = triangleCount;
 			int vertexOffset = vertexCount;
-			face.EnumerateVertices ([&] (double x, double y, double z) {
+			face.EnumerateVertices ([&](double x, double y, double z) {
 				positionArr.set (vertexCount * 3, x);
 				positionArr.set (vertexCount * 3 + 1, y);
 				positionArr.set (vertexCount * 3 + 2, z);
 				vertexCount += 1;
 			});
-			face.EnumerateNormals ([&] (double x, double y, double z) {
+			face.EnumerateNormals ([&](double x, double y, double z) {
 				normalArr.set (normalCount * 3, x);
 				normalArr.set (normalCount * 3 + 1, y);
 				normalArr.set (normalCount * 3 + 2, z);
 				normalCount += 1;
 			});
-			face.EnumerateTriangles ([&] (int v0, int v1, int v2) {
+			face.EnumerateTriangles ([&](int v0, int v1, int v2) {
 				indexArr.set (triangleCount * 3, vertexOffset + v0);
 				indexArr.set (triangleCount * 3 + 1, vertexOffset + v1);
 				indexArr.set (triangleCount * 3 + 2, vertexOffset + v2);
@@ -91,7 +83,7 @@ public:
 		if (faceColorCount > 0) {
 			meshObj.set ("face_colors", faceColorArr);
 		}
-		
+
 		emscripten::val attributesObj (emscripten::val::object ());
 
 		emscripten::val positionObj (emscripten::val::object ());
@@ -112,20 +104,10 @@ public:
 
 		meshesArr.set (meshIndex, meshObj);
 		meshIndex += 1;
-	}
+	});
 
-	emscripten::val		resultObj;
-	emscripten::val		meshesArr;
-	int					meshIndex;
-};
-
-emscripten::val ReadStepFile (const emscripten::val& content)
-{
-	const std::vector<uint8_t>& contentArr = emscripten::vecFromJSArray<std::uint8_t> (content);
-	EmscriptenOutput output;
-	Result result = ReadStepFile (contentArr, output);
-	output.resultObj.set ("success", result == Result::Success);
-	return output.resultObj;
+	resultObj.set ("meshes", meshesArr);
+	return resultObj;
 }
 
 EMSCRIPTEN_BINDINGS (assimpjs)

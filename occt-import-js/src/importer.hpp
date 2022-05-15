@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <memory>
 #include <functional>
 
 class Color
@@ -36,14 +37,6 @@ public:
 	virtual void			EnumerateFaces (const std::function<void (const Face& face)>& onFace) const = 0;
 };
 
-class Output
-{
-public:
-	virtual void OnBegin () = 0;
-	virtual void OnEnd () = 0;
-	virtual void OnMesh (const Mesh& Mesh) = 0;
-};
-
 enum class Result
 {
 	Success = 0,
@@ -51,7 +44,29 @@ enum class Result
 	ImportFailed = 2
 };
 
-Result ReadStepFile (const std::string& filePath, Output& output);
-Result ReadStepFile (const std::vector<std::uint8_t>& fileContent, Output& output);
+class ImporterImpl;
+
+class Importer
+{
+public:
+	enum class Result
+	{
+		Success = 0,
+		FileNotFound = 1,
+		ImportFailed = 2
+	};
+
+	Importer ();
+	~Importer ();
+
+	Result		LoadStepFile (const std::string& filePath);
+	Result		LoadStepFile (const std::vector<std::uint8_t>& fileContent);
+	Result		LoadStepFile (std::istream& inputStream);
+
+	void		EnumerateMeshes (const std::function<void (const Mesh&)>& onMesh);
+
+private:
+	ImporterImpl* impl;
+};
 
 #endif

@@ -3,10 +3,10 @@
 
 #include "importer.hpp"
 
-class ConsoleOutput : public Output
+class ObjWriter
 {
 public:
-	ConsoleOutput () :
+	ObjWriter () :
 		objFile ("result.obj"),
 		vertexCount (0),
 		meshCount (0)
@@ -14,22 +14,12 @@ public:
 		
 	}
 
-	~ConsoleOutput ()
+	~ObjWriter ()
 	{
 		objFile.close ();
 	}
 
-	virtual void OnBegin () override
-	{
-
-	}
-
-	virtual void OnEnd () override
-	{
-	
-	}
-
-	virtual void OnMesh (const Mesh& mesh) override
+	void OnMesh (const Mesh& mesh)
 	{
 		std::cout << "Mesh Start" << std::endl;
 		objFile << "g " << meshCount << std::endl;
@@ -71,8 +61,16 @@ int main (int argc, const char* argv[])
 		return 1;
 	}
 
-	ConsoleOutput output;
-	ReadStepFile (argv[1], output);
+	Importer importer;
+	Importer::Result result = importer.LoadStepFile (argv[1]);
+	if (result != Importer::Result::Success) {
+		return 1;
+	}
+
+	ObjWriter writer;
+	importer.EnumerateMeshes ([&](const Mesh& mesh) {
+		writer.OnMesh (mesh);
+	});
 
 	return 0;
 }
