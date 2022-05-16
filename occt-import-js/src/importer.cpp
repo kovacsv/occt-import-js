@@ -323,18 +323,62 @@ public:
 		return Importer::Result::Success;
 	}
 
-	void EnumerateMeshes (const std::function<void (const Mesh&)>& onMesh)
+	void EnumerateMeshes (const std::function<void (const Mesh&)>& onMesh) const
 	{
+		// For hierarchy:
+		// 1. Enumerate all the top-level free shapes starting with shapeTool->Label ().
+		// 2. Make sure to triangulate a top-level free shape together wit all children.
+		// 3. Enumerate all the child free shapes, and stop if there is a subshape child
+		// 4. Enumerate meshes of child free shapes.
+
 		TDF_LabelSequence labels;
 		shapeTool->GetFreeShapes (labels);
 
 		for (Standard_Integer labelIndex = 1; labelIndex <= labels.Length (); labelIndex++) {
-			TopoDS_Shape shape = shapeTool->GetShape (labels.Value (labelIndex));
-			ProcessShape (shape, onMesh);
+			ProcessLabel (labels.Value (labelIndex), onMesh);
 		}
 	}
 
+	void DumpHierarchy ()
+	{
+		std::function<void (const TDF_Label&, int)> dumpLabel = [&] (const TDF_Label& label, int depth) {
+			for (int i = 0; i < depth; i++) {
+				std::cout << "  ";
+			}
+			std::string name = GetLabelName (label);
+			if (!name.empty ()) {
+				std::cout << name << " ";
+			}
+			TopoDS_Shape tmpShape;
+			std::cout << "( ";
+			std::cout << (shapeTool->IsShape (label) ? "shape " : "");
+			std::cout << (shapeTool->GetShape (label, tmpShape) ? "hasshape " : "");
+			std::cout << (shapeTool->IsSimpleShape (label) ? "simple " : "");
+			std::cout << (shapeTool->IsFree (label) ? "free " : "");
+			std::cout << (shapeTool->IsCompound (label) ? "compound " : "");
+			std::cout << (shapeTool->IsSubShape (label) ? "subshape " : "");
+			std::cout << (shapeTool->IsReference (label) ? "reference " : "");
+			std::cout << (shapeTool->IsAssembly (label) ? "assembly " : "");
+			std::cout << ")" << std::endl;
+			for (TDF_ChildIterator it (label); it.More (); it.Next ()) {
+				TDF_Label child = it.Value ();
+				TopoDS_Shape tmpChildShape;
+				if (shapeTool->GetShape (child, tmpChildShape) && shapeTool->IsFree (child)) {
+					dumpLabel (child, depth + 1);
+				}
+			}
+		};
+
+		dumpLabel (shapeTool->Label (), 0);
+	}
+
 private:
+	void ProcessLabel (const TDF_Label& label, const std::function<void (const Mesh&)>& onMesh) const
+	{
+		TopoDS_Shape shape = shapeTool->GetShape (label);
+		ProcessShape (shape, onMesh);
+	}
+
 	void ProcessShape (const TopoDS_Shape& shape, const std::function<void (const Mesh&)>& onMesh) const
 	{
 		Bnd_Box boundingBox;
@@ -403,7 +447,12 @@ Importer::Result Importer::LoadStepFile (const std::vector<std::uint8_t>& fileCo
 	return impl->LoadStepFile (fileContent);
 }
 
-void Importer::EnumerateMeshes (const std::function<void (const Mesh&)>& onMesh)
+void Importer::EnumerateMeshes (const std::function<void (const Mesh&)>& onMesh) const
 {
 	return impl->EnumerateMeshes (onMesh);
+}
+
+void Importer::DumpHierarchy () const
+{
+	impl->DumpHierarchy ();
 }

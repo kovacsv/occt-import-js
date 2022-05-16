@@ -63,7 +63,8 @@ public:
 	Result		LoadStepFile (const std::vector<std::uint8_t>& fileContent);
 	Result		LoadStepFile (std::istream& inputStream);
 
-	void		EnumerateMeshes (const std::function<void (const Mesh&)>& onMesh);
+	void		EnumerateMeshes (const std::function<void (const Mesh&)>& onMesh) const;
+	void		DumpHierarchy () const;
 
 private:
 	ImporterImpl* impl;

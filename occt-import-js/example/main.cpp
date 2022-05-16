@@ -67,6 +67,8 @@ int main (int argc, const char* argv[])
 		return 1;
 	}
 
+	importer.DumpHierarchy ();
+
 	ObjWriter writer;
 	importer.EnumerateMeshes ([&](const Mesh& mesh) {
 		writer.OnMesh (mesh);
