@@ -55,6 +55,20 @@ public:
 	std::uint32_t		meshCount;
 };
 
+static void WriteNode (const NodePtr& node, ObjWriter& writer)
+{
+	std::string name = node->GetName ();
+	if (node->IsMeshNode ()) {
+		node->EnumerateMeshes ([&] (const Mesh& mesh) {
+			writer.OnMesh (mesh);
+		});
+	}
+	std::vector<NodePtr> children = node->GetChildren ();
+	for (const NodePtr& child : children) {
+		WriteNode (child, writer);
+	}
+}
+
 int main (int argc, const char* argv[])
 {
 	if (argc < 2) {
@@ -70,9 +84,12 @@ int main (int argc, const char* argv[])
 	importer.DumpHierarchy ();
 
 	ObjWriter writer;
-	importer.EnumerateMeshes ([&](const Mesh& mesh) {
-		writer.OnMesh (mesh);
-	});
+	WriteNode (importer.GetRootNode (), writer);
+
+	//ObjWriter writer;
+	//importer.EnumerateMeshes ([&](const Mesh& mesh) {
+	//	writer.OnMesh (mesh);
+	//});
 
 	return 0;
 }

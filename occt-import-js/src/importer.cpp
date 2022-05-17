@@ -40,6 +40,23 @@ static std::string GetLabelName (const TDF_Label& label)
 	return name;
 }
 
+static bool TriangulateShape (TopoDS_Shape& shape)
+{
+	Bnd_Box boundingBox;
+	BRepBndLib::Add (shape, boundingBox, false);
+	if (boundingBox.IsVoid ()) {
+		return false;
+	}
+
+	Standard_Real xMin, yMin, zMin, xMax, yMax, zMax;
+	boundingBox.Get (xMin, yMin, zMin, xMax, yMax, zMax);
+	Standard_Real avgSize = ((xMax - xMin) + (yMax - yMin) + (zMax - zMin)) / 3.0;
+	Standard_Real linDeflection = avgSize / 1000.0;
+	Standard_Real angDeflection = 0.5;
+	BRepMesh_IncrementalMesh mesh (shape, linDeflection, Standard_False, angDeflection);
+	return true;
+}
+
 static std::string GetShapeName (const TopoDS_Shape& shape, const Handle(XCAFDoc_ShapeTool)& shapeTool)
 {
 	TDF_Label shapeLabel;
@@ -263,6 +280,145 @@ private:
 	const Handle(XCAFDoc_ColorTool)& colorTool;
 };
 
+class DocNode : public Node
+{
+public:
+	DocNode (const TDF_Label& label, const Handle (XCAFDoc_ShapeTool)& shapeTool, const Handle (XCAFDoc_ColorTool)& colorTool) :
+		label (label),
+		shapeTool (shapeTool),
+		colorTool (colorTool)
+	{
+
+	}
+
+	virtual std::string GetName () const override
+	{
+		return GetLabelName (label);
+	}
+
+	virtual std::vector<NodePtr> GetChildren () const override
+	{
+		if (IsMeshNode ()) {
+			return {};
+		}
+
+		std::vector<NodePtr> children;
+		for (TDF_ChildIterator it (label); it.More (); it.Next ()) {
+			TDF_Label childLabel = it.Value ();
+			TopoDS_Shape tmpChildShape;
+			if (shapeTool->GetShape (childLabel, tmpChildShape) && shapeTool->IsFree (childLabel)) {
+				children.push_back (std::make_shared<const DocNode> (
+					childLabel, shapeTool, colorTool
+				));
+			}
+		}
+		return children;
+	}
+
+	virtual bool IsMeshNode () const override
+	{
+		if (!label.HasChild ()) {
+			return true;
+		}
+
+		for (TDF_ChildIterator it (label); it.More (); it.Next ()) {
+			TDF_Label childLabel = it.Value ();
+			if (shapeTool->IsSubShape (childLabel)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	virtual void EnumerateMeshes (const std::function<void (const Mesh&)>& onMesh) const override
+	{
+		if (!IsMeshNode ()) {
+			return;
+		}
+
+		TopoDS_Shape shape = shapeTool->GetShape (label);
+		EnumerateShapeMeshes (shape, onMesh);
+	}
+
+private:
+	void EnumerateShapeMeshes (const TopoDS_Shape& shape, const std::function<void (const Mesh&)>& onMesh) const
+	{
+		// Enumerate solids
+		for (TopExp_Explorer ex (shape, TopAbs_SOLID); ex.More (); ex.Next ()) {
+			const TopoDS_Shape& currentShape = ex.Current ();
+			OcctFacesMesh outputShapeMesh (currentShape, shapeTool, colorTool);
+			onMesh (outputShapeMesh);
+		}
+
+		// Enumerate shells that are not part of a solid
+		for (TopExp_Explorer ex (shape, TopAbs_SHELL, TopAbs_SOLID); ex.More (); ex.Next ()) {
+			const TopoDS_Shape& currentShape = ex.Current ();
+			OcctFacesMesh outputShapeMesh (currentShape, shapeTool, colorTool);
+			onMesh (outputShapeMesh);
+		}
+
+		// Create a mesh from faces that are not part of a shell
+		OcctStandaloneFacesMesh standaloneFacesMesh (shape, colorTool);
+		if (standaloneFacesMesh.HasFaces ()) {
+			onMesh (standaloneFacesMesh);
+		}
+	}
+
+	TDF_Label label;
+	const Handle (XCAFDoc_ShapeTool)& shapeTool;
+	const Handle (XCAFDoc_ColorTool)& colorTool;
+};
+
+class RootNode : public Node
+{
+public:
+	RootNode (const Handle (XCAFDoc_ShapeTool)& shapeTool, const Handle (XCAFDoc_ColorTool)& colorTool) :
+		shapeTool (shapeTool),
+		colorTool (colorTool)
+	{
+
+	}
+
+	virtual std::string GetName () const override
+	{
+		return "";
+	}
+
+	virtual std::vector<NodePtr> GetChildren () const override
+	{
+		TDF_LabelSequence labels;
+		shapeTool->GetFreeShapes (labels);
+
+		std::vector<NodePtr> children;
+		for (Standard_Integer labelIndex = 1; labelIndex <= labels.Length (); labelIndex++) {
+			TDF_Label label = labels.Value (labelIndex);
+			TopoDS_Shape shape = shapeTool->GetShape (label);
+			if (!TriangulateShape (shape)) {
+				continue;
+			}
+			children.push_back (std::make_shared<const DocNode> (
+				label, shapeTool, colorTool
+			));
+		}
+		return children;
+	}
+
+	virtual bool IsMeshNode () const override
+	{
+		return false;
+	}
+
+	virtual void EnumerateMeshes (const std::function<void (const Mesh&)>& onMesh) const override
+	{
+
+	}
+
+private:
+	const Handle (XCAFDoc_ShapeTool)& shapeTool;
+	const Handle (XCAFDoc_ColorTool)& colorTool;
+};
+
 class ImporterImpl
 {
 public:
@@ -323,14 +479,9 @@ public:
 		return Importer::Result::Success;
 	}
 
-	void EnumerateMeshes (const std::function<void (const Mesh&)>& onMesh) const
+	NodePtr GetRootNode () const
 	{
-		TDF_LabelSequence labels;
-		shapeTool->GetFreeShapes (labels);
-
-		for (Standard_Integer labelIndex = 1; labelIndex <= labels.Length (); labelIndex++) {
-			ProcessTopLevelLabel (labels.Value (labelIndex), onMesh);
-		}
+		return std::make_shared<const RootNode> (shapeTool, colorTool);
 	}
 
 	void DumpHierarchy ()
@@ -367,80 +518,6 @@ public:
 	}
 
 private:
-	void ProcessTopLevelLabel (const TDF_Label& label, const std::function<void (const Mesh&)>& onMesh) const
-	{
-		TopoDS_Shape shape = shapeTool->GetShape (label);
-
-		Bnd_Box boundingBox;
-		BRepBndLib::Add (shape, boundingBox, false);
-		if (boundingBox.IsVoid ()) {
-			return;
-		}
-
-		// Calculate triangulation
-		Standard_Real xMin, yMin, zMin, xMax, yMax, zMax;
-		boundingBox.Get (xMin, yMin, zMin, xMax, yMax, zMax);
-		Standard_Real avgSize = ((xMax - xMin) + (yMax - yMin) + (zMax - zMin)) / 3.0;
-		Standard_Real linDeflection = avgSize / 1000.0;
-		Standard_Real angDeflection = 0.5;
-		BRepMesh_IncrementalMesh mesh (shape, linDeflection, Standard_False, angDeflection);
-
-		ProcessLabel (label, onMesh);
-	}
-
-	void ProcessLabel (const TDF_Label& label, const std::function<void (const Mesh&)>& onMesh) const
-	{
-		std::string name = GetLabelName (label);
-		bool needToGenerateMeshes = true;
-		if (label.HasChild ()) {
-			needToGenerateMeshes = false;
-			for (TDF_ChildIterator it (label); it.More (); it.Next ()) {
-				TDF_Label childLabel = it.Value ();
-				if (shapeTool->IsSubShape (childLabel)) {
-					needToGenerateMeshes = true;
-					break;
-				}
-			}
-		}
-
-		if (needToGenerateMeshes) {
-			TopoDS_Shape shape = shapeTool->GetShape (label);
-			ProcessShape (shape, onMesh);
-			return;
-		}
-
-		for (TDF_ChildIterator it (label); it.More (); it.Next ()) {
-			TDF_Label childLabel = it.Value ();
-			TopoDS_Shape tmpChildShape;
-			if (shapeTool->GetShape (childLabel, tmpChildShape) && shapeTool->IsFree (childLabel)) {
-				ProcessLabel (childLabel, onMesh);
-			}
-		}
-	}
-
-	void ProcessShape (const TopoDS_Shape& shape, const std::function<void (const Mesh&)>& onMesh) const
-	{
-		// Enumerate solids
-		for (TopExp_Explorer ex (shape, TopAbs_SOLID); ex.More (); ex.Next ()) {
-			const TopoDS_Shape& currentShape = ex.Current ();
-			OcctFacesMesh outputShapeMesh (currentShape, shapeTool, colorTool);
-			onMesh (outputShapeMesh);
-		}
-
-		// Enumerate shells that are not part of a solid
-		for (TopExp_Explorer ex (shape, TopAbs_SHELL, TopAbs_SOLID); ex.More (); ex.Next ()) {
-			const TopoDS_Shape& currentShape = ex.Current ();
-			OcctFacesMesh outputShapeMesh (currentShape, shapeTool, colorTool);
-			onMesh (outputShapeMesh);
-		}
-
-		// Create a mesh from faces that are not part of a shell
-		OcctStandaloneFacesMesh standaloneFacesMesh (shape, colorTool);
-		if (standaloneFacesMesh.HasFaces ()) {
-			onMesh (standaloneFacesMesh);
-		}
-	}
-
 	Handle(TDocStd_Document) document;
 	Handle(XCAFDoc_ShapeTool) shapeTool;
 	Handle(XCAFDoc_ColorTool) colorTool;
@@ -472,12 +549,13 @@ Importer::Result Importer::LoadStepFile (const std::vector<std::uint8_t>& fileCo
 	return impl->LoadStepFile (fileContent);
 }
 
-void Importer::EnumerateMeshes (const std::function<void (const Mesh&)>& onMesh) const
+NodePtr Importer::GetRootNode () const
 {
-	return impl->EnumerateMeshes (onMesh);
+	return impl->GetRootNode ();
 }
 
 void Importer::DumpHierarchy () const
 {
 	impl->DumpHierarchy ();
 }
+

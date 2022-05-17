@@ -4,6 +4,17 @@
 #include "importer.hpp"
 #include <emscripten/bind.h>
 
+static void EnumerateNodeMeshes (const NodePtr& node, const std::function<void (const Mesh&)>& onMesh)
+{
+	if (node->IsMeshNode ()) {
+		node->EnumerateMeshes (onMesh);
+	}
+	std::vector<NodePtr> children = node->GetChildren ();
+	for (const NodePtr& child : children) {
+		EnumerateNodeMeshes (child, onMesh);
+	}
+}
+
 emscripten::val ReadStepFile (const emscripten::val& content)
 {
 	emscripten::val resultObj (emscripten::val::object ());
@@ -18,7 +29,8 @@ emscripten::val ReadStepFile (const emscripten::val& content)
 
 	int meshIndex = 0;
 	emscripten::val meshesArr (emscripten::val::array ());
-	importer.EnumerateMeshes ([&] (const Mesh& mesh) {
+	NodePtr rootNode = importer.GetRootNode ();
+	EnumerateNodeMeshes (rootNode, [&] (const Mesh& mesh) {
 		int vertexCount = 0;
 		int normalCount = 0;
 		int triangleCount = 0;

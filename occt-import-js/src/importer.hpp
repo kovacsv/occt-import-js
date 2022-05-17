@@ -37,6 +37,19 @@ public:
 	virtual void			EnumerateFaces (const std::function<void (const Face& face)>& onFace) const = 0;
 };
 
+class Node;
+using NodePtr = std::shared_ptr<const Node>;
+
+class Node
+{
+public:
+	virtual std::string GetName () const = 0;
+	virtual std::vector<NodePtr> GetChildren () const = 0;
+
+	virtual bool IsMeshNode () const = 0;
+	virtual void EnumerateMeshes (const std::function<void (const Mesh&)>& onMesh) const = 0;
+};
+
 enum class Result
 {
 	Success = 0,
@@ -63,7 +76,7 @@ public:
 	Result		LoadStepFile (const std::vector<std::uint8_t>& fileContent);
 	Result		LoadStepFile (std::istream& inputStream);
 
-	void		EnumerateMeshes (const std::function<void (const Mesh&)>& onMesh) const;
+	NodePtr		GetRootNode () const;
 	void		DumpHierarchy () const;
 
 private:
