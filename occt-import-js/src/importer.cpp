@@ -325,17 +325,11 @@ public:
 
 	void EnumerateMeshes (const std::function<void (const Mesh&)>& onMesh) const
 	{
-		// For hierarchy:
-		// 1. Enumerate all the top-level free shapes starting with shapeTool->Label ().
-		// 2. Make sure to triangulate a top-level free shape together wit all children.
-		// 3. Enumerate all the child free shapes, and stop if there is a subshape child
-		// 4. Enumerate meshes of child free shapes.
-
 		TDF_LabelSequence labels;
 		shapeTool->GetFreeShapes (labels);
 
 		for (Standard_Integer labelIndex = 1; labelIndex <= labels.Length (); labelIndex++) {
-			ProcessLabel (labels.Value (labelIndex), onMesh);
+			ProcessTopLevelLabel (labels.Value (labelIndex), onMesh);
 		}
 	}
 
@@ -373,14 +367,10 @@ public:
 	}
 
 private:
-	void ProcessLabel (const TDF_Label& label, const std::function<void (const Mesh&)>& onMesh) const
+	void ProcessTopLevelLabel (const TDF_Label& label, const std::function<void (const Mesh&)>& onMesh) const
 	{
 		TopoDS_Shape shape = shapeTool->GetShape (label);
-		ProcessShape (shape, onMesh);
-	}
 
-	void ProcessShape (const TopoDS_Shape& shape, const std::function<void (const Mesh&)>& onMesh) const
-	{
 		Bnd_Box boundingBox;
 		BRepBndLib::Add (shape, boundingBox, false);
 		if (boundingBox.IsVoid ()) {
@@ -395,6 +385,41 @@ private:
 		Standard_Real angDeflection = 0.5;
 		BRepMesh_IncrementalMesh mesh (shape, linDeflection, Standard_False, angDeflection);
 
+		ProcessLabel (label, onMesh);
+	}
+
+	void ProcessLabel (const TDF_Label& label, const std::function<void (const Mesh&)>& onMesh) const
+	{
+		std::string name = GetLabelName (label);
+		bool needToGenerateMeshes = true;
+		if (label.HasChild ()) {
+			needToGenerateMeshes = false;
+			for (TDF_ChildIterator it (label); it.More (); it.Next ()) {
+				TDF_Label childLabel = it.Value ();
+				if (shapeTool->IsSubShape (childLabel)) {
+					needToGenerateMeshes = true;
+					break;
+				}
+			}
+		}
+
+		if (needToGenerateMeshes) {
+			TopoDS_Shape shape = shapeTool->GetShape (label);
+			ProcessShape (shape, onMesh);
+			return;
+		}
+
+		for (TDF_ChildIterator it (label); it.More (); it.Next ()) {
+			TDF_Label childLabel = it.Value ();
+			TopoDS_Shape tmpChildShape;
+			if (shapeTool->GetShape (childLabel, tmpChildShape) && shapeTool->IsFree (childLabel)) {
+				ProcessLabel (childLabel, onMesh);
+			}
+		}
+	}
+
+	void ProcessShape (const TopoDS_Shape& shape, const std::function<void (const Mesh&)>& onMesh) const
+	{
 		// Enumerate solids
 		for (TopExp_Explorer ex (shape, TopAbs_SOLID); ex.More (); ex.Next ()) {
 			const TopoDS_Shape& currentShape = ex.Current ();
