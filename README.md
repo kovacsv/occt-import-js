@@ -63,13 +63,17 @@ occtimportjs.then ((occt) => {
 The result of the import is a JSON object with the following structure.
 
 - **success** (boolean): Tells if the import was successful.
+- **root** (object): The root node of the hierarchy.
+  - **name** (string): Name of the node.
+  - **meshes** (array): Indices of the meshes in the meshes array for this node.
+  - **children** (array): Array of child nodes for this node.
 - **meshes** (array): Array of mesh objects. The geometry representation is compatible with [three.js](https://github.com/mrdoob/three.js).
-  - **name** (string, optional): Name of the mesh.
+  - **name** (string): Name of the mesh.
   - **color** (array, optional): Array of r, g, and b values of the mesh color.
   - **face_colors** (array, optional): Array of face color groups.
     - **first** (number): The first triangle index with this color.
     - **last** (number): The last triangle index with this color.
-    - **color** (array, optional): Array of r, g, and b values of the color.
+    - **color** (array): Array of r, g, and b values of the color.
   - **attributes** (object)
     - **position** (object)
       - **array** (array): Array of number triplets defining the vertex positions.

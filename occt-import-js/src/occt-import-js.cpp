@@ -87,10 +87,7 @@ public:
 			});
 
 			emscripten::val meshObj (emscripten::val::object ());
-			std::string name = mesh.GetName ();
-			if (name.length () > 0) {
-				meshObj.set ("name", mesh.GetName ());
-			}
+			meshObj.set ("name", mesh.GetName ());
 
 			Color color = mesh.GetColor ();
 			if (color.hasValue) {
