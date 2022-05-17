@@ -24,16 +24,28 @@ it ('simple-basic-cube', function () {
 	let result = LoadStepFile ('./test/testfiles/simple-basic-cube/cube.stp');
 	assert (result.success);
 	assert.strictEqual (result.meshes.length, 1);
+	assert.deepStrictEqual (result.root, {
+		name : "",
+		meshes : [],
+		children : [
+			{
+				name : "cube",
+				meshes : [0],
+				children : []			
+			}
+		]
+	});
 });
 
 it ('as1_pe_203.stp', function () {
 	let result = LoadStepFile ('./test/testfiles/cax-if/as1_pe_203.stp');
-	assert (result.success);
+
 	assert.strictEqual (result.meshes.length, 18);
 	for (let mesh of result.meshes) {
 		assert (mesh.name !== undefined);
 		assert (mesh.color !== undefined);
 	}
+	
 	assert.equal (1980, result.meshes[0].index.array.length);
 	assert.equal (1356, result.meshes[1].index.array.length);
 	assert.equal (612, result.meshes[2].index.array.length);
@@ -52,6 +64,39 @@ it ('as1_pe_203.stp', function () {
 	assert.equal (300, result.meshes[15].index.array.length);
 	assert.equal (360, result.meshes[16].index.array.length);
 	assert.equal (360, result.meshes[17].index.array.length);
+	
+	assert.deepStrictEqual (result.root, {
+		name : "",
+		meshes : [],
+		children : [
+			{
+				name : "AS1_PE_ASM",
+				meshes : [],
+				children : [
+					{
+						name : "PLATE",
+						meshes : [0],
+						children : []
+					},
+					{
+						name : "L_BRACKET_ASSEMBLY",
+						meshes : [1, 2, 3, 4, 5, 6, 7],
+						children : []
+					},
+					{
+						name : "L_BRACKET_ASSEMBLY",
+						meshes : [8, 9, 10, 11, 12, 13, 14],
+						children : []
+					},
+					{
+						name : "ROD",
+						meshes : [15, 16, 17],
+						children : []
+					}
+				]			
+			}
+		]
+	});
 });
 
 it ('as1-oc-214.stp', function () {
