@@ -40,6 +40,12 @@ static std::string GetLabelName (const TDF_Label& label)
 	return name;
 }
 
+static bool IsFreeShape (const TDF_Label& label, const Handle (XCAFDoc_ShapeTool)& shapeTool)
+{
+	TopoDS_Shape tmpShape;
+	return shapeTool->GetShape (label, tmpShape) && shapeTool->IsFree (label);
+}
+
 static bool TriangulateShape (TopoDS_Shape& shape)
 {
 	Bnd_Box boundingBox;
@@ -305,8 +311,7 @@ public:
 		std::vector<NodePtr> children;
 		for (TDF_ChildIterator it (label); it.More (); it.Next ()) {
 			TDF_Label childLabel = it.Value ();
-			TopoDS_Shape tmpChildShape;
-			if (shapeTool->GetShape (childLabel, tmpChildShape) && shapeTool->IsFree (childLabel)) {
+			if (IsFreeShape (childLabel, shapeTool)) {
 				children.push_back (std::make_shared<const DocNode> (
 					childLabel, shapeTool, colorTool
 				));
@@ -321,11 +326,28 @@ public:
 			return true;
 		}
 
+		bool hasSubShapeChild = false;
 		for (TDF_ChildIterator it (label); it.More (); it.Next ()) {
 			TDF_Label childLabel = it.Value ();
 			if (shapeTool->IsSubShape (childLabel)) {
-				return true;
+				hasSubShapeChild = true;
+				break;
 			}
+		}
+		if (hasSubShapeChild) {
+			return true;
+		}
+
+		bool hasFreeShapeChild = false;
+		for (TDF_ChildIterator it (label); it.More (); it.Next ()) {
+			TDF_Label childLabel = it.Value ();
+			if (IsFreeShape (childLabel, shapeTool)) {
+				hasFreeShapeChild = true;
+				break;
+			}
+		}
+		if (!hasFreeShapeChild) {
+			return true;
 		}
 
 		return false;
@@ -387,20 +409,22 @@ public:
 
 	virtual std::vector<NodePtr> GetChildren () const override
 	{
-		TDF_LabelSequence labels;
-		shapeTool->GetFreeShapes (labels);
+		TDF_Label mainLabel = shapeTool->Label ();
 
 		std::vector<NodePtr> children;
-		for (Standard_Integer labelIndex = 1; labelIndex <= labels.Length (); labelIndex++) {
-			TDF_Label label = labels.Value (labelIndex);
-			TopoDS_Shape shape = shapeTool->GetShape (label);
-			if (!TriangulateShape (shape)) {
-				continue;
+		for (TDF_ChildIterator it (mainLabel); it.More (); it.Next ()) {
+			TDF_Label childLabel = it.Value ();
+			if (IsFreeShape (childLabel, shapeTool)) {
+				TopoDS_Shape shape = shapeTool->GetShape (childLabel);
+				if (!TriangulateShape (shape)) {
+					continue;
+				}
+				children.push_back (std::make_shared<const DocNode> (
+					childLabel, shapeTool, colorTool
+				));
 			}
-			children.push_back (std::make_shared<const DocNode> (
-				label, shapeTool, colorTool
-			));
 		}
+
 		return children;
 	}
 

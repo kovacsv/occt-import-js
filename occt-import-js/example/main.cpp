@@ -86,10 +86,5 @@ int main (int argc, const char* argv[])
 	ObjWriter writer;
 	WriteNode (importer.GetRootNode (), writer);
 
-	//ObjWriter writer;
-	//importer.EnumerateMeshes ([&](const Mesh& mesh) {
-	//	writer.OnMesh (mesh);
-	//});
-
 	return 0;
 }
