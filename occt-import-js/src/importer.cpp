@@ -322,10 +322,12 @@ public:
 
 	virtual bool IsMeshNode () const override
 	{
+		// if there are no children, it is a mesh node
 		if (!label.HasChild ()) {
 			return true;
 		}
 
+		// if it has a subshape child, treat it as mesh node
 		bool hasSubShapeChild = false;
 		for (TDF_ChildIterator it (label); it.More (); it.Next ()) {
 			TDF_Label childLabel = it.Value ();
@@ -338,6 +340,7 @@ public:
 			return true;
 		}
 
+		// if it doesn't have a freeshape child, treat it as a mesh node
 		bool hasFreeShapeChild = false;
 		for (TDF_ChildIterator it (label); it.More (); it.Next ()) {
 			TDF_Label childLabel = it.Value ();
