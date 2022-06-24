@@ -23,6 +23,8 @@
 #include <XCAFDoc_ShapeTool.hxx>
 #include <STEPCAFControl_Reader.hxx>
 
+#include <IGESCAFControl_Reader.hxx>
+
 #include <iostream>
 #include <fstream>
 
@@ -457,39 +459,35 @@ public:
 
 	}
 
-	Importer::Result LoadStepFile (const std::string& filePath)
+	Importer::Result LoadFile (Importer::Format format, const std::string& filePath)
 	{
 		std::ifstream inputStream (filePath, std::ios::binary);
 		if (!inputStream.is_open ()) {
 			return Importer::Result::FileNotFound;
 		}
-		Importer::Result result = LoadStepFile (inputStream);
+		Importer::Result result = LoadFile (format, inputStream);
 		inputStream.close ();
 		return result;
 	}
 
-	Importer::Result LoadStepFile (const std::vector<std::uint8_t>& fileContent)
+	Importer::Result LoadFile (Importer::Format format, const std::vector<std::uint8_t>& fileContent)
 	{
 		VectorBuffer fileBuffer (fileContent);
 		std::istream fileStream (&fileBuffer);
-		return LoadStepFile (fileStream);
+		return LoadFile (format, fileStream);
 	}
 
-	Importer::Result LoadStepFile (std::istream& inputStream)
+	Importer::Result LoadFile (Importer::Format format, std::istream& inputStream)
 	{
-		STEPCAFControl_Reader stepCafReader;
-		stepCafReader.SetColorMode (true);
-		stepCafReader.SetNameMode (true);
-
-		STEPControl_Reader& stepReader = stepCafReader.ChangeReader ();
-		std::string dummyFileName = "stp";
- 		IFSelect_ReturnStatus readStatus = stepReader.ReadStream (dummyFileName.c_str (), inputStream);
-		if (readStatus != IFSelect_RetDone) {
-			return Importer::Result::ImportFailed;
-		}
-
-		document = new TDocStd_Document ("XmlXCAF");
-		if (!stepCafReader.Transfer (document)) {
+		if (format == Importer::Format::Step) {
+			if (!TransferStepFileToDocument (inputStream)) {
+				return Importer::Result::ImportFailed;
+			}
+		} else if (format == Importer::Format::Iges) {
+			if (!TransferIgesFileToDocument (inputStream)) {
+				return Importer::Result::ImportFailed;
+			}
+		} else {
 			return Importer::Result::ImportFailed;
 		}
 
@@ -545,6 +543,47 @@ public:
 	}
 
 private:
+	bool TransferStepFileToDocument (std::istream& inputStream)
+	{
+		STEPCAFControl_Reader stepCafReader;
+		stepCafReader.SetColorMode (true);
+		stepCafReader.SetNameMode (true);
+
+		STEPControl_Reader& stepReader = stepCafReader.ChangeReader ();
+		std::string dummyFileName = "stp";
+		IFSelect_ReturnStatus readStatus = stepReader.ReadStream (dummyFileName.c_str (), inputStream);
+		if (readStatus != IFSelect_RetDone) {
+			return false;
+		}
+
+		document = new TDocStd_Document ("XmlXCAF");
+		if (!stepCafReader.Transfer (document)) {
+			return false;
+		}
+
+		return true;
+	}
+
+	bool TransferIgesFileToDocument (std::istream& inputStream)
+	{
+		IGESCAFControl_Reader igesCafReader;
+		igesCafReader.SetColorMode (true);
+		igesCafReader.SetNameMode (true);
+
+		std::string dummyFileName = "iges";
+		IFSelect_ReturnStatus readStatus = igesCafReader.ReadFile ("C:\\Users\\Viktor\\GitRepos\\occt-import-js\\test\\testfiles\\iges-cube\\cube.igs");
+		if (readStatus != IFSelect_RetDone) {
+			return false;
+		}
+
+		document = new TDocStd_Document ("XmlXCAF");
+		if (!igesCafReader.Transfer (document)) {
+			return false;
+		}
+
+		return true;
+	}
+	
 	Handle(TDocStd_Document) document;
 	Handle(XCAFDoc_ShapeTool) shapeTool;
 	Handle(XCAFDoc_ColorTool) colorTool;
@@ -561,19 +600,19 @@ Importer::~Importer ()
 	delete impl;
 }
 
-Importer::Result Importer::LoadStepFile (const std::string& filePath)
+Importer::Result Importer::LoadFile (Format format, const std::string& filePath)
 {
-	return impl->LoadStepFile (filePath);
+	return impl->LoadFile (format, filePath);
 }
 
-Importer::Result Importer::LoadStepFile (std::istream& inputStream)
+Importer::Result Importer::LoadFile (Format format, std::istream& inputStream)
 {
-	return impl->LoadStepFile (inputStream);
+	return impl->LoadFile (format, inputStream);
 }
 
-Importer::Result Importer::LoadStepFile (const std::vector<std::uint8_t>& fileContent)
+Importer::Result Importer::LoadFile (Format format, const std::vector<std::uint8_t>& fileContent)
 {
-	return impl->LoadStepFile (fileContent);
+	return impl->LoadFile (format, fileContent);
 }
 
 NodePtr Importer::GetRootNode () const

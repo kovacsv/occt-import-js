@@ -62,6 +62,12 @@ class ImporterImpl;
 class Importer
 {
 public:
+	enum class Format
+	{
+		Step = 0,
+		Iges = 1
+	};
+
 	enum class Result
 	{
 		Success = 0,
@@ -72,9 +78,9 @@ public:
 	Importer ();
 	~Importer ();
 
-	Result		LoadStepFile (const std::string& filePath);
-	Result		LoadStepFile (const std::vector<std::uint8_t>& fileContent);
-	Result		LoadStepFile (std::istream& inputStream);
+	Result		LoadFile (Format format, const std::string& filePath);
+	Result		LoadFile (Format format, const std::vector<std::uint8_t>& fileContent);
+	Result		LoadFile (Format format, std::istream& inputStream);
 
 	NodePtr		GetRootNode () const;
 	void		DumpHierarchy () const;

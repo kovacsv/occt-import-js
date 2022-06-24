@@ -76,7 +76,7 @@ int main (int argc, const char* argv[])
 	}
 
 	Importer importer;
-	Importer::Result result = importer.LoadStepFile (argv[1]);
+	Importer::Result result = importer.LoadFile (Importer::Format::Iges, argv[1]);
 	if (result != Importer::Result::Success) {
 		return 1;
 	}
