@@ -2,6 +2,7 @@
 
 The [emscripten](https://emscripten.org) interface for [OpenCascade](https://www.opencascade.com) import functionalities. It runs entirely in the browser, and allows you to import step files and access the result in JSON format.
 
+[![npm version](https://badge.fury.io/js/occt-import-js.svg)](https://badge.fury.io/js/occt-import-js)
 [![WASM Build](https://github.com/kovacsv/occt-import-js/actions/workflows/wasm_build.yml/badge.svg)](https://github.com/kovacsv/occt-import-js/actions/workflows/wasm_build.yml)
 [![Native Build](https://github.com/kovacsv/occt-import-js/actions/workflows/native_build.yml/badge.svg)](https://github.com/kovacsv/occt-import-js/actions/workflows/native_build.yml)
 
