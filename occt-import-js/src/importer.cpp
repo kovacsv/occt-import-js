@@ -571,7 +571,8 @@ private:
 		igesCafReader.SetNameMode (true);
 
 		std::string dummyFileName = "iges";
-		IFSelect_ReturnStatus readStatus = igesCafReader.ReadFile ("C:\\Users\\Viktor\\GitRepos\\occt-import-js\\test\\testfiles\\iges-cube\\cube.igs");
+		//IFSelect_ReturnStatus readStatus = igesCafReader.ReadFile ("C:\\Users\\Viktor\\Desktop\\ventilador.IGS");
+		IFSelect_ReturnStatus readStatus = igesCafReader.ReadStream (dummyFileName.c_str (), inputStream);
 		if (readStatus != IFSelect_RetDone) {
 			return false;
 		}
