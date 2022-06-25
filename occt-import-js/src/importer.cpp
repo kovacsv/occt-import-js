@@ -570,8 +570,8 @@ private:
 		igesCafReader.SetColorMode (true);
 		igesCafReader.SetNameMode (true);
 
+		// TODO: Doesn't work, because IGESSelect_WorkLibrary::ReadStream is not implemented
 		std::string dummyFileName = "iges";
-		//IFSelect_ReturnStatus readStatus = igesCafReader.ReadFile ("C:\\Users\\Viktor\\Desktop\\ventilador.IGS");
 		IFSelect_ReturnStatus readStatus = igesCafReader.ReadStream (dummyFileName.c_str (), inputStream);
 		if (readStatus != IFSelect_RetDone) {
 			return false;
