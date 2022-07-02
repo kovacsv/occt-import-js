@@ -1,3 +1,5 @@
+#define IGES_SUPPORT
+
 #include "importer.hpp"
 
 #include <TopExp_Explorer.hxx>
@@ -23,7 +25,9 @@
 #include <XCAFDoc_ShapeTool.hxx>
 #include <STEPCAFControl_Reader.hxx>
 
+#ifdef IGES_SUPPORT
 #include <IGESCAFControl_Reader.hxx>
+#endif
 
 #include <iostream>
 #include <fstream>
@@ -566,23 +570,40 @@ private:
 
 	bool TransferIgesFileToDocument (std::istream& inputStream)
 	{
+#ifdef IGES_SUPPORT
+		// IGESCAFControl_Reader::ReadStream is not implemented, so the stream
+		// should be written to a temporary file to import the content from
+		std::string dummyFileName = "temp.igs";
+		std::ofstream dummyFile;
+		dummyFile.open (dummyFileName);
+		std::streampos fileLength = inputStream.tellg ();
+		char* fileContent = new char[fileLength];
+		inputStream.read (fileContent, fileLength);
+		dummyFile.write (fileContent, fileLength);
+		delete[] fileContent;
+		dummyFile.close ();
+
 		IGESCAFControl_Reader igesCafReader;
 		igesCafReader.SetColorMode (true);
 		igesCafReader.SetNameMode (true);
 
-		// TODO: Doesn't work, because IGESSelect_WorkLibrary::ReadStream is not implemented
-		std::string dummyFileName = "iges";
-		IFSelect_ReturnStatus readStatus = igesCafReader.ReadStream (dummyFileName.c_str (), inputStream);
+		IFSelect_ReturnStatus readStatus = igesCafReader.ReadFile (dummyFileName.c_str ());
 		if (readStatus != IFSelect_RetDone) {
+			std::remove (dummyFileName.c_str ());
 			return false;
 		}
 
 		document = new TDocStd_Document ("XmlXCAF");
 		if (!igesCafReader.Transfer (document)) {
+			std::remove (dummyFileName.c_str ());
 			return false;
 		}
 
+		std::remove (dummyFileName.c_str ());
 		return true;
+#else
+		return false;
+#endif
 	}
 	
 	Handle(TDocStd_Document) document;
