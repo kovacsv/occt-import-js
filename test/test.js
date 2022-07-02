@@ -147,10 +147,22 @@ it ('as1-oc-214.stp', function () {
     assert.strictEqual (result.meshes.length, 18);
 });
 
-it ('iges-cube', function () {
-    let result = LoadIgesFile ('./test/testfiles/iges-cube/cube.igs');
+it ('Cube 10x10.stp', function () {
+    let result = LoadStepFile ('./test/testfiles/cube-10x10mm/Cube 10x10.stp');
     assert (result.success);
     assert.strictEqual (result.meshes.length, 1);
+    assert.strictEqual (36, result.meshes[0].index.array.length);
 });
 
+});
+
+describe ('Iges Import', function () {
+
+it ('Cube 10x10.igs', function () {
+    let result = LoadIgesFile ('./test/testfiles/cube-10x10mm/Cube 10x10.igs');
+    //assert (result.success);
+    //assert.strictEqual (result.meshes.length, 1);
+    //assert.strictEqual (36, result.meshes[0].index.array.length);
+});
+    
 });
