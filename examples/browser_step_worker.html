@@ -18,7 +18,10 @@
             worker.onmessage = function (ev) {
                 console.log (ev.data);
             }
-            worker.postMessage (fileBuffer);
+            worker.postMessage ({
+                format: 'step',
+                buffer: fileBuffer
+            });
         };
     </script>
 </head>
