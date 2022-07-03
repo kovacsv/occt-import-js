@@ -142,13 +142,13 @@ static void EnumerateNodeMeshes (const NodePtr& node, const std::function<void (
 	}
 }
 
-emscripten::val ReadStepFile (const emscripten::val& content)
+static emscripten::val ReadFile (Importer::Format format, const emscripten::val& content)
 {
 	emscripten::val resultObj (emscripten::val::object ());
-	
+
 	Importer importer;
 	const std::vector<uint8_t>& contentArr = emscripten::vecFromJSArray<std::uint8_t> (content);
-	Importer::Result importResult = importer.LoadStepFile (contentArr);
+	Importer::Result importResult = importer.LoadFile (format, contentArr);
 	resultObj.set ("success", importResult == Importer::Result::Success);
 	if (importResult != Importer::Result::Success) {
 		return resultObj;
@@ -167,9 +167,20 @@ emscripten::val ReadStepFile (const emscripten::val& content)
 	return resultObj;
 }
 
+emscripten::val ReadStepFile (const emscripten::val& content)
+{
+	return ReadFile (Importer::Format::Step, content);
+}
+
+emscripten::val ReadIgesFile (const emscripten::val& content)
+{
+	return ReadFile (Importer::Format::Iges, content);
+}
+
 EMSCRIPTEN_BINDINGS (assimpjs)
 {
 	emscripten::function<emscripten::val, const emscripten::val&> ("ReadStepFile", &ReadStepFile);
+	emscripten::function<emscripten::val, const emscripten::val&> ("ReadIgesFile", &ReadIgesFile);
 }
 
 #endif

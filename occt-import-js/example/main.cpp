@@ -75,8 +75,27 @@ int main (int argc, const char* argv[])
 		return 1;
 	}
 
+	std::string fileName = argv[1];
+	size_t extensionStart = fileName.find_last_of ('.');
+	if (extensionStart == std::string::npos) {
+		return 1;
+	}
+	std::string extension = fileName.substr (extensionStart);
+	for (size_t i = 0; i < extension.length (); i++) {
+		extension[i] = std::tolower (extension[i]);
+	}
+
+	Importer::Format format = Importer::Format::Step;
+	if (extension == ".stp" || extension == ".step") {
+		format = Importer::Format::Step;
+	} else if (extension == ".igs" || extension == ".iges") {
+		format = Importer::Format::Iges;
+	} else {
+		return 1;
+	}
+
 	Importer importer;
-	Importer::Result result = importer.LoadStepFile (argv[1]);
+	Importer::Result result = importer.LoadFile (format, argv[1]);
 	if (result != Importer::Result::Success) {
 		return 1;
 	}
