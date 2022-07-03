@@ -80,7 +80,6 @@ public:
 
 	Result		LoadFile (Format format, const std::string& filePath);
 	Result		LoadFile (Format format, const std::vector<std::uint8_t>& fileContent);
-	Result		LoadFile (Format format, std::istream& inputStream);
 
 	NodePtr		GetRootNode () const;
 	void		DumpHierarchy () const;

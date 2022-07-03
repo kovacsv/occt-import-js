@@ -152,6 +152,17 @@ it ('Cube 10x10.stp', function () {
     assert (result.success);
     assert.strictEqual (result.meshes.length, 1);
     assert.strictEqual (36, result.meshes[0].index.array.length);
+    assert.deepStrictEqual (result.root, {
+        name : "",
+        meshes : [],
+        children : [
+            {
+                name : "Cube 10x10",
+                meshes : [0],
+                children : []       
+            }
+        ]
+    });
 });
 
 });
@@ -160,9 +171,20 @@ describe ('Iges Import', function () {
 
 it ('Cube 10x10.igs', function () {
     let result = LoadIgesFile ('./test/testfiles/cube-10x10mm/Cube 10x10.igs');
-    //assert (result.success);
-    //assert.strictEqual (result.meshes.length, 1);
-    //assert.strictEqual (36, result.meshes[0].index.array.length);
+    assert (result.success);
+    assert.strictEqual (result.meshes.length, 1);
+    assert.strictEqual (36, result.meshes[0].index.array.length);
+    assert.deepStrictEqual (result.root, {
+        name : "",
+        meshes : [],
+        children : [
+            {
+                name : "Solid1",
+                meshes : [0],
+                children : []       
+            }
+        ]
+    });
 });
     
 });

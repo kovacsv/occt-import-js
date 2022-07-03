@@ -469,26 +469,21 @@ public:
 		if (!inputStream.is_open ()) {
 			return Importer::Result::FileNotFound;
 		}
-		Importer::Result result = LoadFile (format, inputStream);
+
+		std::vector<std::uint8_t> fileContent (std::istreambuf_iterator<char> (inputStream), {});
+		Importer::Result result = LoadFile (format, fileContent);
 		inputStream.close ();
 		return result;
 	}
 
 	Importer::Result LoadFile (Importer::Format format, const std::vector<std::uint8_t>& fileContent)
 	{
-		VectorBuffer fileBuffer (fileContent);
-		std::istream fileStream (&fileBuffer);
-		return LoadFile (format, fileStream);
-	}
-
-	Importer::Result LoadFile (Importer::Format format, std::istream& inputStream)
-	{
 		if (format == Importer::Format::Step) {
-			if (!TransferStepFileToDocument (inputStream)) {
+			if (!TransferStepFileToDocument (fileContent)) {
 				return Importer::Result::ImportFailed;
 			}
 		} else if (format == Importer::Format::Iges) {
-			if (!TransferIgesFileToDocument (inputStream)) {
+			if (!TransferIgesFileToDocument (fileContent)) {
 				return Importer::Result::ImportFailed;
 			}
 		} else {
@@ -547,7 +542,7 @@ public:
 	}
 
 private:
-	bool TransferStepFileToDocument (std::istream& inputStream)
+	bool TransferStepFileToDocument (const std::vector<std::uint8_t>& fileContent)
 	{
 		STEPCAFControl_Reader stepCafReader;
 		stepCafReader.SetColorMode (true);
@@ -555,6 +550,8 @@ private:
 
 		STEPControl_Reader& stepReader = stepCafReader.ChangeReader ();
 		std::string dummyFileName = "stp";
+		VectorBuffer inputBuffer (fileContent);
+		std::istream inputStream (&inputBuffer);
 		IFSelect_ReturnStatus readStatus = stepReader.ReadStream (dummyFileName.c_str (), inputStream);
 		if (readStatus != IFSelect_RetDone) {
 			return false;
@@ -568,19 +565,15 @@ private:
 		return true;
 	}
 
-	bool TransferIgesFileToDocument (std::istream& inputStream)
+	bool TransferIgesFileToDocument (const std::vector<std::uint8_t>& fileContent)
 	{
 #ifdef IGES_SUPPORT
 		// IGESCAFControl_Reader::ReadStream is not implemented, so the stream
 		// should be written to a temporary file to import the content from
 		std::string dummyFileName = "temp.igs";
 		std::ofstream dummyFile;
-		dummyFile.open (dummyFileName);
-		std::streampos fileLength = inputStream.tellg ();
-		char* fileContent = new char[fileLength];
-		inputStream.read (fileContent, fileLength);
-		dummyFile.write (fileContent, fileLength);
-		delete[] fileContent;
+		dummyFile.open (dummyFileName, std::ios::binary);
+		dummyFile.write ((char*) fileContent.data (), fileContent.size ());
 		dummyFile.close ();
 
 		IGESCAFControl_Reader igesCafReader;
@@ -625,11 +618,6 @@ Importer::~Importer ()
 Importer::Result Importer::LoadFile (Format format, const std::string& filePath)
 {
 	return impl->LoadFile (format, filePath);
-}
-
-Importer::Result Importer::LoadFile (Format format, std::istream& inputStream)
-{
-	return impl->LoadFile (format, inputStream);
 }
 
 Importer::Result Importer::LoadFile (Format format, const std::vector<std::uint8_t>& fileContent)
