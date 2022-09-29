@@ -1,8 +1,6 @@
 cmake_minimum_required (VERSION 3.6)
 
 set_property (GLOBAL PROPERTY USE_FOLDERS ON)
-
-set (CMAKE_SUPPRESS_REGENERATION 1)
 set (CMAKE_CONFIGURATION_TYPES Debug;Release;RelWithDebInfo;MinSizeRel)
 
 add_definitions (-DUNICODE -D_UNICODE)
@@ -285,7 +283,7 @@ file (GLOB OcctSourceFiles ${OcctSourceFolders})
 
 set (OcctImportJSSourcesFolder occt-import-js/src)
 file (GLOB
-	OcctImportJSSourceFiles
+	OcctImportJSSourceFiles CONFIGURE_DEPENDS
 	${OcctImportJSSourcesFolder}/*.hpp
 	${OcctImportJSSourcesFolder}/*.cpp
 )
@@ -319,8 +317,7 @@ set_target_properties (OcctImportJS PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE
 if (${EMSCRIPTEN})
 else ()
 	set (OcctImportJSExampleSourcesFolder occt-import-js/example)
-	file (GLOB
-		OcctImportJSExampleSourceFiles
+	file (GLOB OcctImportJSExampleSourceFiles CONFIGURE_DEPENDS
 		${OcctImportJSExampleSourcesFolder}/*.hpp
 		${OcctImportJSExampleSourcesFolder}/*.cpp
 	)
