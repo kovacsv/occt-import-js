@@ -3,6 +3,7 @@
 
 #include "importer-step.hpp"
 #include "importer-iges.hpp"
+#include "importer-brep.hpp"
 
 class ObjWriter
 {
@@ -91,6 +92,8 @@ int main (int argc, const char* argv[])
         importer = std::make_shared<ImporterStep> ();
     } else if (extension == ".igs" || extension == ".iges") {
         importer = std::make_shared<ImporterIges> ();
+    } else if (extension == ".brp" || extension == ".brep") {
+        importer = std::make_shared<ImporterBrep> ();
     } else {
         return 1;
     }

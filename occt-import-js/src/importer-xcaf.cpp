@@ -15,7 +15,7 @@ static std::string GetLabelName (const TDF_Label& label)
 {
     Handle (TDataStd_Name) nameAttribute = new TDataStd_Name ();
     if (!label.FindAttribute (nameAttribute->GetID (), nameAttribute)) {
-        return "";
+        return std::string ();
     }
     Standard_Integer utf8NameLength = nameAttribute->Get ().LengthOfCString ();
     char* nameBuf = new char[utf8NameLength + 1];
@@ -35,7 +35,7 @@ static std::string GetShapeName (const TopoDS_Shape& shape, const Handle (XCAFDo
 {
     TDF_Label shapeLabel;
     if (!shapeTool->Search (shape, shapeLabel)) {
-        return "";
+        return std::string ();
     }
     return GetLabelName (shapeLabel);
 }
@@ -58,23 +58,14 @@ static bool GetShapeColor (const TopoDS_Shape& shape, const Handle (XCAFDoc_Colo
     return false;
 }
 
-class XcafFace : public Face
+class XcafFace : public OcctFace
 {
 public:
     XcafFace (const TopoDS_Face& face, const Handle (XCAFDoc_ColorTool)& colorTool) :
-        Face (),
-        face (face),
+        OcctFace (face),
         colorTool (colorTool)
     {
-        triangulation = BRep_Tool::Triangulation (face, location);
-        if (HasTriangulation ()) {
-            triangulation->ComputeNormals ();
-        }
-    }
 
-    virtual bool HasNormals () const override
-    {
-        return HasTriangulation () && triangulation->HasNormals ();
     }
 
     virtual bool GetColor (Color& color) const override
@@ -82,69 +73,8 @@ public:
         return GetShapeColor ((const TopoDS_Shape&) face, colorTool, color);
     }
 
-    virtual void EnumerateVertices (const std::function<void (double, double, double)>& onVertex) const override
-    {
-        if (!HasTriangulation ()) {
-            return;
-        }
-
-        gp_Trsf transformation = location.Transformation ();
-        for (Standard_Integer nodeIndex = 1; nodeIndex <= triangulation->NbNodes (); nodeIndex++) {
-            gp_Pnt vertex = triangulation->Node (nodeIndex);
-            vertex.Transform (transformation);
-            onVertex (vertex.X (), vertex.Y (), vertex.Z ());
-        }
-    }
-
-    virtual void EnumerateNormals (const std::function<void (double, double, double)>& onNormal) const override
-    {
-        if (!HasTriangulation () || !triangulation->HasNormals ()) {
-            return;
-        }
-
-        bool isReversed = (face.Orientation () == TopAbs_REVERSED);
-        gp_Trsf transformation = location.Transformation ();
-        for (Standard_Integer nodeIndex = 1; nodeIndex <= triangulation->NbNodes (); nodeIndex++) {
-            gp_Dir normal = triangulation->Normal (nodeIndex);
-            normal.Transform (transformation);
-            if (isReversed) {
-                onNormal (-normal.X (), -normal.Y (), -normal.Z ());
-            } else {
-                onNormal (normal.X (), normal.Y (), normal.Z ());
-            }
-        }
-    }
-
-    virtual void EnumerateTriangles (const std::function<void (int, int, int)>& onTriangle) const override
-    {
-        if (!HasTriangulation ()) {
-            return;
-        }
-
-        bool isReversed = (face.Orientation () == TopAbs_REVERSED);
-        for (Standard_Integer triangleIndex = 1; triangleIndex <= triangulation->NbTriangles (); triangleIndex++) {
-            Poly_Triangle triangle = triangulation->Triangle (triangleIndex);
-            if (isReversed) {
-                onTriangle (triangle (1) - 1, triangle (3) - 1, triangle (2) - 1);
-            } else {
-                onTriangle (triangle (1) - 1, triangle (2) - 1, triangle (3) - 1);
-            }
-        }
-    }
-
 private:
-    bool HasTriangulation () const
-    {
-        if (triangulation.IsNull () || triangulation->NbNodes () == 0 || triangulation->NbTriangles () == 0) {
-            return false;
-        }
-        return true;
-    }
-
-    const TopoDS_Face& face;
     const Handle (XCAFDoc_ColorTool)& colorTool;
-    Handle (Poly_Triangulation) triangulation;
-    TopLoc_Location location;
 };
 
 class XcafShapeMesh : public Mesh
@@ -346,7 +276,7 @@ public:
 
     virtual std::string GetName () const override
     {
-        return "";
+        return std::string ();
     }
 
     virtual std::vector<NodePtr> GetChildren () const override
@@ -384,7 +314,6 @@ private:
     const Handle (XCAFDoc_ShapeTool)& shapeTool;
     const Handle (XCAFDoc_ColorTool)& colorTool;
 };
-
 
 ImporterXcaf::ImporterXcaf () :
     Importer (),

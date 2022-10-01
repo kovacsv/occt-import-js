@@ -3,6 +3,7 @@
 #include "js-interface.hpp"
 #include "importer-step.hpp"
 #include "importer-iges.hpp"
+#include "importer-brep.hpp"
 #include <emscripten/bind.h>
 
 class HierarchyWriter
@@ -178,10 +179,17 @@ emscripten::val ReadIgesFile (const emscripten::val& content)
     return ReadFile (importer, content);
 }
 
+emscripten::val ReadBrepFile (const emscripten::val& content)
+{
+    ImporterPtr importer = std::make_shared<ImporterBrep> ();
+    return ReadFile (importer, content);
+}
+
 EMSCRIPTEN_BINDINGS (assimpjs)
 {
     emscripten::function<emscripten::val, const emscripten::val&> ("ReadStepFile", &ReadStepFile);
     emscripten::function<emscripten::val, const emscripten::val&> ("ReadIgesFile", &ReadIgesFile);
+    emscripten::function<emscripten::val, const emscripten::val&> ("ReadBrepFile", &ReadBrepFile);
 }
 
 #endif

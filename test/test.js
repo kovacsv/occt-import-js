@@ -24,6 +24,12 @@ function LoadIgesFile (fileUrl)
     return occt.ReadIgesFile (fileContent);
 }
 
+function LoadBrepFile (fileUrl)
+{
+    let fileContent = fs.readFileSync (fileUrl);
+    return occt.ReadBrepFile (fileContent);
+}
+
 describe ('Step Import', function () {
     
 it ('simple-basic-cube', function () {
@@ -186,5 +192,34 @@ it ('Cube 10x10.igs', function () {
         ]
     });
 });
+
+});
+
+describe ('Brep Import', function () {
+
+it ('as1_pe_203.brep', function () {
+    let result = LoadBrepFile ('./test/testfiles/cax-if-brep/as1_pe_203.brep');
+    assert (result.success);
+    assert.strictEqual (result.meshes.length, 18);
     
+    assert.equal (1980, result.meshes[0].index.array.length);
+    assert.equal (1356, result.meshes[1].index.array.length);
+    assert.equal (612, result.meshes[2].index.array.length);
+    assert.equal (360, result.meshes[3].index.array.length);
+    assert.equal (612, result.meshes[4].index.array.length);
+    assert.equal (360, result.meshes[5].index.array.length);
+    assert.equal (612, result.meshes[6].index.array.length);
+    assert.equal (360, result.meshes[7].index.array.length);
+    assert.equal (1356, result.meshes[8].index.array.length);
+    assert.equal (612, result.meshes[9].index.array.length);
+    assert.equal (360, result.meshes[10].index.array.length);
+    assert.equal (612, result.meshes[11].index.array.length);
+    assert.equal (360, result.meshes[12].index.array.length);
+    assert.equal (612, result.meshes[13].index.array.length);
+    assert.equal (360, result.meshes[14].index.array.length);
+    assert.equal (300, result.meshes[15].index.array.length);
+    assert.equal (360, result.meshes[16].index.array.length);
+    assert.equal (360, result.meshes[17].index.array.length);    
+});
+
 });
