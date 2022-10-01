@@ -147,6 +147,7 @@ Importer::Result ImporterBrep::LoadFile (const std::vector<std::uint8_t>& fileCo
     if (shape.IsNull ()) {
         return Importer::Result::ImportFailed;
     }
+
     TriangulateShape (shape);
     return Importer::Result::Success;
 }
