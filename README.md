@@ -1,6 +1,6 @@
 # occt-import-js
 
-The [emscripten](https://emscripten.org) interface for [OpenCascade](https://www.opencascade.com) import functionalities. It runs entirely in the browser, and allows you to import step and iges files and access the result in JSON format.
+The [emscripten](https://emscripten.org) interface for [OpenCascade](https://www.opencascade.com) import functionalities. It runs entirely in the browser, and allows you to import brep, step and iges files and access the result in JSON format.
 
 [![npm version](https://badge.fury.io/js/occt-import-js.svg)](https://badge.fury.io/js/occt-import-js)
 [![WASM Build](https://github.com/kovacsv/occt-import-js/actions/workflows/wasm_build.yml/badge.svg)](https://github.com/kovacsv/occt-import-js/actions/workflows/wasm_build.yml)
@@ -22,8 +22,9 @@ The library runs in the browser and as a node.js module as well.
 
 You will need two files from the `dist` folder: `occt-import-js.js` and `occt-import-js.wasm`. The wasm file is loaded runtime by the js file. THere are two public functions in the library:
 
-* `ReadStepFile` to import step files.
-* `ReadIgesFile` to import iges files.
+* `ReadBrepFile` to import brep file.
+* `ReadStepFile` to import step file.
+* `ReadIgesFile` to import iges file.
 
 ### Use from the browser
 
