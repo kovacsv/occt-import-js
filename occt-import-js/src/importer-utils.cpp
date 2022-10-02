@@ -107,6 +107,9 @@ bool TriangulateShape (TopoDS_Shape& shape)
     boundingBox.Get (xMin, yMin, zMin, xMax, yMax, zMax);
     Standard_Real avgSize = ((xMax - xMin) + (yMax - yMin) + (zMax - zMin)) / 3.0;
     Standard_Real linDeflection = avgSize / 1000.0;
+    if (linDeflection < Precision::Confusion ()) {
+        linDeflection = 1.0;
+    }
     Standard_Real angDeflection = 0.5;
     BRepMesh_IncrementalMesh mesh (shape, linDeflection, Standard_False, angDeflection);
     return true;
