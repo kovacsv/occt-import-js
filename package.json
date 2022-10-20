@@ -20,5 +20,8 @@
 		"start": "http-server",
 		"test": "mocha test/test.js --timeout 20000"
 	},
-	"dependencies": {}
+	"dependencies": {},
+	"browser": {
+		"fs": false
+	}
 }
