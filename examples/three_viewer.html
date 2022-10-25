@@ -47,7 +47,7 @@
             if (resultMesh.attributes.normal) {
                 geometry.setAttribute ('normal', new THREE.Float32BufferAttribute (resultMesh.attributes.normal.array, 3));
             }
-            const index = Uint16Array.from (resultMesh.index.array);
+            const index = Uint32Array.from (resultMesh.index.array);
             geometry.setIndex (new THREE.BufferAttribute (index, 1));
             
             let material = null;
