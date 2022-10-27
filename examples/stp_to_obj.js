@@ -11,7 +11,7 @@ let objFilePath = args[1];
 
 occtimportjs.then ((occt) => {
 	let fileContent = fs.readFileSync (stpFilePath);
-	let stpContent = occt.ReadStepFile (fileContent);
+	let stpContent = occt.ReadStepFile (fileContent, null);
 	if (!stpContent.success) {
         process.exit (1);
     }

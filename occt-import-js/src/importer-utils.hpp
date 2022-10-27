@@ -36,4 +36,4 @@ protected:
     TopLoc_Location location;
 };
 
-bool TriangulateShape (TopoDS_Shape& shape);
+bool TriangulateShape (TopoDS_Shape& shape, const TriangulationParams& params);

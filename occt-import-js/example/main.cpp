@@ -98,7 +98,8 @@ int main (int argc, const char* argv[])
         return 1;
     }
 
-    Importer::Result result = importer->LoadFile (argv[1]);
+    TriangulationParams params;
+    Importer::Result result = importer->LoadFile (argv[1], params);
     if (result != Importer::Result::Success) {
         return 1;
     }

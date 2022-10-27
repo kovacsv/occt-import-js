@@ -20,11 +20,19 @@ npm install occt-import-js
 
 The library runs in the browser and as a node.js module as well.
 
-You will need two files from the `dist` folder: `occt-import-js.js` and `occt-import-js.wasm`. The wasm file is loaded runtime by the js file. THere are two public functions in the library:
+You will need two files from the `dist` folder: `occt-import-js.js` and `occt-import-js.wasm`. The wasm file is loaded runtime by the js file. There are three public functions in the library:
 
-* `ReadBrepFile` to import brep file.
-* `ReadStepFile` to import step file.
-* `ReadIgesFile` to import iges file.
+- `ReadBrepFile` to import brep file.
+- `ReadStepFile` to import step file.
+- `ReadIgesFile` to import iges file.
+
+Both functions have two parameters:
+
+- `content`: The file content as a `Uint8Array` object.
+- `params`: Triangulation parameters as an object, can be `null`.
+  - If the value is `null`, the triangulation density is calculated automatically based on the bounding boxes of elements.
+  - If the value is not `null`, the object can have two number values, `linearDeflection` and `angularDeflection`. You can find more information about these values [here](https://dev.opencascade.org/doc/overview/html/occt_user_guides__mesh.html).
+
 
 ### Use from the browser
 
@@ -42,7 +50,7 @@ occtimportjs ().then (async function (occt) {
 	let response = await fetch (fileUrl);
 	let buffer = await response.arrayBuffer ();
 	let fileBuffer = new Uint8Array (buffer);
-	let result = occt.ReadStepFile (fileBuffer);
+	let result = occt.ReadStepFile (fileBuffer, null);
 	console.log (result);
 });
 ```
@@ -58,7 +66,7 @@ const occtimportjs = require ('occt-import-js')();
 occtimportjs.then ((occt) => {
 	let fileUrl = '../test/testfiles/simple-basic-cube/cube.stp';
 	let fileContent = fs.readFileSync (fileUrl);
-	let result = occt.ReadStepFile (fileContent);
+	let result = occt.ReadStepFile (fileContent, null);
 	console.log (result);
 });
 ```

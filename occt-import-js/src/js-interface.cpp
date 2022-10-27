@@ -143,12 +143,12 @@ static void EnumerateNodeMeshes (const NodePtr& node, const std::function<void (
     }
 }
 
-static emscripten::val ReadFile (ImporterPtr importer, const emscripten::val& content)
+static emscripten::val ReadFile (ImporterPtr importer, const emscripten::val& content, const TriangulationParams& params)
 {
     emscripten::val resultObj (emscripten::val::object ());
 
     const std::vector<uint8_t>& contentArr = emscripten::vecFromJSArray<std::uint8_t> (content);
-    Importer::Result importResult = importer->LoadFile (contentArr);
+    Importer::Result importResult = importer->LoadFile (contentArr, params);
     resultObj.set ("success", importResult == Importer::Result::Success);
     if (importResult != Importer::Result::Success) {
         return resultObj;
@@ -167,29 +167,54 @@ static emscripten::val ReadFile (ImporterPtr importer, const emscripten::val& co
     return resultObj;
 }
 
-emscripten::val ReadStepFile (const emscripten::val& content)
+static TriangulationParams GetTriangulationParams (const emscripten::val& paramsVal)
+{
+    TriangulationParams params;
+    if (paramsVal.isUndefined () || paramsVal.isNull ()) {
+        return params;
+    }
+
+    if (paramsVal.hasOwnProperty ("linearDeflection")) {
+        emscripten::val linearDeflection = paramsVal["linearDeflection"];
+        params.linearDeflection = linearDeflection.as<double> ();
+        params.automatic = false;
+    }
+
+    if (paramsVal.hasOwnProperty ("angularDeflection")) {
+        emscripten::val angularDeflection = paramsVal["angularDeflection"];
+        params.angularDeflection = angularDeflection.as<double> ();;
+        params.automatic = false;
+    }
+
+    return params;
+}
+
+emscripten::val ReadStepFile (const emscripten::val& content, const emscripten::val& params)
 {
     ImporterPtr importer = std::make_shared<ImporterStep> ();
-    return ReadFile (importer, content);
+    TriangulationParams triParams = GetTriangulationParams (params);
+    return ReadFile (importer, content, triParams);
 }
 
-emscripten::val ReadIgesFile (const emscripten::val& content)
+emscripten::val ReadIgesFile (const emscripten::val& content, const emscripten::val& params)
 {
     ImporterPtr importer = std::make_shared<ImporterIges> ();
-    return ReadFile (importer, content);
+    TriangulationParams triParams = GetTriangulationParams (params);
+    return ReadFile (importer, content, triParams);
 }
 
-emscripten::val ReadBrepFile (const emscripten::val& content)
+emscripten::val ReadBrepFile (const emscripten::val& content, const emscripten::val& params)
 {
     ImporterPtr importer = std::make_shared<ImporterBrep> ();
-    return ReadFile (importer, content);
+    TriangulationParams triParams = GetTriangulationParams (params);
+    return ReadFile (importer, content, triParams);
 }
 
 EMSCRIPTEN_BINDINGS (assimpjs)
 {
-    emscripten::function<emscripten::val, const emscripten::val&> ("ReadStepFile", &ReadStepFile);
-    emscripten::function<emscripten::val, const emscripten::val&> ("ReadIgesFile", &ReadIgesFile);
-    emscripten::function<emscripten::val, const emscripten::val&> ("ReadBrepFile", &ReadBrepFile);
+    emscripten::function<emscripten::val, const emscripten::val&, const emscripten::val&> ("ReadStepFile", &ReadStepFile);
+    emscripten::function<emscripten::val, const emscripten::val&, const emscripten::val&> ("ReadIgesFile", &ReadIgesFile);
+    emscripten::function<emscripten::val, const emscripten::val&, const emscripten::val&> ("ReadBrepFile", &ReadBrepFile);
 }
 
 #endif

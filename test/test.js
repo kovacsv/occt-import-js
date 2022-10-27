@@ -15,19 +15,25 @@ before (async function () {
 function LoadStepFile (fileUrl)
 {
     let fileContent = fs.readFileSync (fileUrl);
-    return occt.ReadStepFile (fileContent);
+    return occt.ReadStepFile (fileContent, null);
 }
 
 function LoadIgesFile (fileUrl)
 {
     let fileContent = fs.readFileSync (fileUrl);
-    return occt.ReadIgesFile (fileContent);
+    return occt.ReadIgesFile (fileContent, null);
 }
 
 function LoadBrepFile (fileUrl)
 {
     let fileContent = fs.readFileSync (fileUrl);
-    return occt.ReadBrepFile (fileContent);
+    return occt.ReadBrepFile (fileContent, null);
+}
+
+function LoadStepFileWithDeflection (fileUrl, params)
+{
+    let fileContent = fs.readFileSync (fileUrl);
+    return occt.ReadStepFile (fileContent, params);
 }
 
 describe ('Step Import', function () {
@@ -49,7 +55,7 @@ it ('simple-basic-cube', function () {
     });
 });
 
-it ('as1_pe_203.stp', function () {
+it ('as1_pe_203', function () {
     let result = LoadStepFile ('./test/testfiles/cax-if/as1_pe_203.stp');
 
     assert.strictEqual (result.meshes.length, 18);
@@ -111,49 +117,49 @@ it ('as1_pe_203.stp', function () {
     });
 });
 
-it ('as1-oc-214.stp', function () {
+it ('as1-oc-214', function () {
     let result = LoadStepFile ('./test/testfiles/cax-if/as1-oc-214.stp');
     assert (result.success);
     assert.strictEqual (result.meshes.length, 18);
 });
 
-it ('as1-tu-203.stp', function () {
+it ('as1-tu-203', function () {
     let result = LoadStepFile ('./test/testfiles/cax-if/as1-tu-203.stp');
     assert (result.success);
     assert.strictEqual (result.meshes.length, 18);
 });
 
-it ('io1-cm-214.stp', function () {
+it ('io1-cm-214', function () {
     let result = LoadStepFile ('./test/testfiles/cax-if/io1-cm-214.stp');
     assert (result.success);
     assert.strictEqual (result.meshes.length, 1);
 });
 
-it ('io1-tu-203.stp', function () {
+it ('io1-tu-203', function () {
     let result = LoadStepFile ('./test/testfiles/cax-if/io1-tu-203.stp');
     assert (result.success);
     assert.strictEqual (result.meshes.length, 1);
 });
 
-it ('dm1-id-214.stp', function () {
+it ('dm1-id-214', function () {
     let result = LoadStepFile ('./test/testfiles/cax-if/dm1-id-214.stp');
     assert (result.success);
     assert.strictEqual (result.meshes.length, 7);
 });
 
-it ('sg1-c5-214.stp', function () {
+it ('sg1-c5-214', function () {
     let result = LoadStepFile ('./test/testfiles/cax-if/sg1-c5-214.stp');
     assert (result.success);
     assert.strictEqual (result.meshes.length, 1);
 });
 
-it ('as1-oc-214.stp', function () {
+it ('as1-oc-214', function () {
     let result = LoadStepFile ('./test/testfiles/cax-if/as1-oc-214/as1-oc-214.stp');
     assert (result.success);
     assert.strictEqual (result.meshes.length, 18);
 });
 
-it ('Cube 10x10.stp', function () {
+it ('Cube 10x10', function () {
     let result = LoadStepFile ('./test/testfiles/cube-10x10mm/Cube 10x10.stp');
     assert (result.success);
     assert.strictEqual (result.meshes.length, 1);
@@ -175,7 +181,7 @@ it ('Cube 10x10.stp', function () {
 
 describe ('Iges Import', function () {
 
-it ('Cube 10x10.igs', function () {
+it ('Cube 10x10', function () {
     let result = LoadIgesFile ('./test/testfiles/cube-10x10mm/Cube 10x10.igs');
     assert (result.success);
     assert.strictEqual (result.meshes.length, 1);
@@ -197,7 +203,7 @@ it ('Cube 10x10.igs', function () {
 
 describe ('Brep Import', function () {
 
-it ('as1_pe_203.brep', function () {
+it ('as1_pe_203', function () {
     let result = LoadBrepFile ('./test/testfiles/cax-if-brep/as1_pe_203.brep');
     assert (result.success);
     assert.strictEqual (result.meshes.length, 18);
@@ -220,6 +226,29 @@ it ('as1_pe_203.brep', function () {
     assert.equal (300, result.meshes[15].index.array.length);
     assert.equal (360, result.meshes[16].index.array.length);
     assert.equal (360, result.meshes[17].index.array.length);    
+});
+
+});
+
+describe ('Deflection', function () {
+
+function CheckResult (params, vertexParamCount) {
+    let result = LoadStepFileWithDeflection ('./test/testfiles/rounded-cube/rounded-cube.step', params);
+    assert (result.success);
+    assert.equal (vertexParamCount, result.meshes[0].attributes.position.array.length);
+}        
+
+it ('Auto deflection', function () {
+    CheckResult (null, 294);
+    CheckResult ({}, 294);
+});
+
+it ('Manual deflection', function () {
+    CheckResult ({ linearDeflection : 10 }, 162);
+    CheckResult ({ linearDeflection : 20 }, 126);
+    
+    CheckResult ({ linearDeflection : 10, angularDeflection : 0.5 }, 162);
+    CheckResult ({ linearDeflection : 10, angularDeflection : 2.0 }, 114);
 });
 
 });

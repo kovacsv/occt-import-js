@@ -9,7 +9,7 @@ class ImporterBrep : public Importer
 public:
     ImporterBrep ();
 
-    virtual Result LoadFile (const std::vector<std::uint8_t>& fileContent) override;
+    virtual Result LoadFile (const std::vector<std::uint8_t>& fileContent, const TriangulationParams& params) override;
     virtual NodePtr GetRootNode () const override;
 
 private:

@@ -267,9 +267,10 @@ private:
 class XcafRootNode : public Node
 {
 public:
-    XcafRootNode (const Handle (XCAFDoc_ShapeTool)& shapeTool, const Handle (XCAFDoc_ColorTool)& colorTool) :
+    XcafRootNode (const Handle (XCAFDoc_ShapeTool)& shapeTool, const Handle (XCAFDoc_ColorTool)& colorTool, const TriangulationParams& params) :
         shapeTool (shapeTool),
-        colorTool (colorTool)
+        colorTool (colorTool),
+        params (params)
     {
 
     }
@@ -288,7 +289,7 @@ public:
             TDF_Label childLabel = it.Value ();
             if (IsFreeShape (childLabel, shapeTool)) {
                 TopoDS_Shape shape = shapeTool->GetShape (childLabel);
-                if (!TriangulateShape (shape)) {
+                if (!TriangulateShape (shape, params)) {
                     continue;
                 }
                 children.push_back (std::make_shared<const XcafNode> (
@@ -313,18 +314,20 @@ public:
 private:
     const Handle (XCAFDoc_ShapeTool)& shapeTool;
     const Handle (XCAFDoc_ColorTool)& colorTool;
+    const TriangulationParams& params;
 };
 
 ImporterXcaf::ImporterXcaf () :
     Importer (),
     document (nullptr),
     shapeTool (nullptr),
-    colorTool (nullptr)
+    colorTool (nullptr),
+    rootNode (nullptr)
 {
 
 }
 
-Importer::Result ImporterXcaf::LoadFile (const std::vector<std::uint8_t>& fileContent)
+Importer::Result ImporterXcaf::LoadFile (const std::vector<std::uint8_t>& fileContent, const TriangulationParams& params)
 {
     if (!TransferToDocument (fileContent)) {
         return Importer::Result::ImportFailed;
@@ -340,10 +343,11 @@ Importer::Result ImporterXcaf::LoadFile (const std::vector<std::uint8_t>& fileCo
         return Importer::Result::ImportFailed;
     }
 
+    rootNode = std::make_shared<const XcafRootNode> (shapeTool, colorTool, params);
     return Importer::Result::Success;
 }
 
 NodePtr ImporterXcaf::GetRootNode () const
 {
-    return std::make_shared<const XcafRootNode> (shapeTool, colorTool);
+    return rootNode;
 }

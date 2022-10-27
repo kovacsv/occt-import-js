@@ -137,7 +137,7 @@ ImporterBrep::ImporterBrep () :
 
 }
 
-Importer::Result ImporterBrep::LoadFile (const std::vector<std::uint8_t>& fileContent)
+Importer::Result ImporterBrep::LoadFile (const std::vector<std::uint8_t>& fileContent, const TriangulationParams& params)
 {
     VectorBuffer inputBuffer (fileContent);
     std::istream inputStream (&inputBuffer);
@@ -148,7 +148,7 @@ Importer::Result ImporterBrep::LoadFile (const std::vector<std::uint8_t>& fileCo
         return Importer::Result::ImportFailed;
     }
 
-    TriangulateShape (shape);
+    TriangulateShape (shape, params);
     return Importer::Result::Success;
 }
 

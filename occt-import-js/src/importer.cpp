@@ -48,6 +48,22 @@ Node::~Node ()
 
 }
 
+TriangulationParams::TriangulationParams () :
+    automatic (true),
+    linearDeflection (1.0),
+    angularDeflection (0.5)
+{
+
+}
+
+TriangulationParams::TriangulationParams (double linearDeflection, double angularDeflection) :
+    automatic (false),
+    linearDeflection (linearDeflection),
+    angularDeflection (angularDeflection)
+{
+
+}
+
 Importer::Importer ()
 {
 
@@ -58,7 +74,7 @@ Importer::~Importer ()
 
 }
 
-Importer::Result Importer::LoadFile (const std::string& filePath)
+Importer::Result Importer::LoadFile (const std::string& filePath, const TriangulationParams& params)
 {
     std::ifstream inputStream (filePath, std::ios::binary);
     if (!inputStream.is_open ()) {
@@ -66,7 +82,7 @@ Importer::Result Importer::LoadFile (const std::string& filePath)
     }
 
     std::vector<std::uint8_t> fileContent (std::istreambuf_iterator<char> (inputStream), {});
-    Importer::Result result = LoadFile (fileContent);
+    Importer::Result result = LoadFile (fileContent, params);
     inputStream.close ();
     return result;
 }

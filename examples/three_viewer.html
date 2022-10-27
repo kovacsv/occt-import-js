@@ -37,7 +37,7 @@
         
         // read the imported step file
         let fileBuffer = new Uint8Array (buffer);
-        let result = occt.ReadStepFile (fileBuffer);
+        let result = occt.ReadStepFile (fileBuffer, null);
         
         // process the geometries of the result
         for (let resultMesh of result.meshes) {
