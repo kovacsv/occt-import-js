@@ -26,13 +26,12 @@ You will need two files from the `dist` folder: `occt-import-js.js` and `occt-im
 - `ReadStepFile` to import step file.
 - `ReadIgesFile` to import iges file.
 
-Both functions have two parameters:
+All functions have two parameters:
 
 - `content`: The file content as a `Uint8Array` object.
 - `params`: Triangulation parameters as an object, can be `null`.
   - If the value is `null`, the triangulation density is calculated automatically based on the bounding boxes of elements.
   - If the value is not `null`, the object can have two number values, `linearDeflection` and `angularDeflection`. You can find more information about these values [here](https://dev.opencascade.org/doc/overview/html/occt_user_guides__mesh.html).
-
 
 ### Use from the browser
 
@@ -125,4 +124,4 @@ If you want to debug the code, it's useful to build a native project. To do that
 
 ## How to run locally?
 
-To run the demo and the examples locally, you have to start a web server. Run `npm install` from the root directory, then run `npm start` and visit `http://localhost:8080`.
+To run the demo and the examples locally, you have to start a web server. Run `npm install` from the root directory, run `npm start` and visit `http://localhost:8080`.
