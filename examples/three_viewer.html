@@ -50,15 +50,45 @@
             const index = Uint32Array.from (resultMesh.index.array);
             geometry.setIndex (new THREE.BufferAttribute (index, 1));
             
-            let material = null;
+            let defaultMaterial = null;
             if (resultMesh.color) {
                 const color = new THREE.Color (resultMesh.color[0], resultMesh.color[1], resultMesh.color[2]);
-                material = new THREE.MeshPhongMaterial ({ color: color });
+                defaultMaterial = new THREE.MeshPhongMaterial ({ color: color });
             } else {
-                material = new THREE.MeshPhongMaterial ({ color: 0xcccccc });
+                defaultMaterial = new THREE.MeshPhongMaterial ({ color: 0xcccccc });
+            }
+
+            let materials = defaultMaterial;
+            if (resultMesh.face_colors && resultMesh.face_colors.length > 0) {
+                materials = [ defaultMaterial ];
+                for (let faceColor of resultMesh.face_colors) {
+                    const color = new THREE.Color (faceColor.color[0], faceColor.color[1], faceColor.color[2]);
+                    materials.push (new THREE.MeshPhongMaterial ({ color: color }));
+                }
+                const triangleCount = resultMesh.index.array.length / 3;
+                let triangleIndex = 0;
+                let faceColorGroupIndex = 0;
+                while (triangleIndex < triangleCount) {
+                    const firstIndex = triangleIndex;
+                    let lastIndex = null;
+                    let materialIndex = null;
+                    if (faceColorGroupIndex >= resultMesh.face_colors.length) {
+                        lastIndex = triangleCount;
+                        materialIndex = 0;
+                    } else if (triangleIndex < resultMesh.face_colors[faceColorGroupIndex].first) {
+                        lastIndex = resultMesh.face_colors[faceColorGroupIndex].first;
+                        materialIndex = 0;
+                    } else {
+                        lastIndex = resultMesh.face_colors[faceColorGroupIndex].last + 1;
+                        materialIndex = faceColorGroupIndex + 1;
+                        faceColorGroupIndex++;
+                    }
+                    geometry.addGroup (firstIndex * 3, (lastIndex - firstIndex) * 3, materialIndex);
+                    triangleIndex = lastIndex;
+                }
             }
             
-            const mesh = new THREE.Mesh (geometry, material);
+            const mesh = new THREE.Mesh (geometry, materials);
             targetObject.add (mesh);
         }
     }
