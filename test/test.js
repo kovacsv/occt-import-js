@@ -177,6 +177,31 @@ it ('Cube 10x10', function () {
     });
 });
 
+it ('cube-fcstd', function () {
+    let result = LoadStepFile ('./test/testfiles/cube-fcstd/cube.step');
+    assert (result.success);
+    assert.deepStrictEqual (result.root, {
+        name : "",
+        meshes : [],
+        children : [
+            {
+                name : "Cube",
+                meshes : [ 0 ],
+                children : []
+            }
+        ]
+    });
+    assert.strictEqual (result.meshes.length, 1);
+    assert.deepStrictEqual (result.meshes[0].name, 'Cube');
+    assert.deepStrictEqual (result.meshes[0].index.array.length, 36);
+    assert.deepStrictEqual (result.meshes[0].color, [ 0.6038273572921753, 0.6038273572921753, 0.6038273572921753 ]);
+    assert.deepStrictEqual (result.meshes[0].face_colors, [
+        { first: 0, last: 1, color: [ 1, 0, 0 ] },
+        { first: 6, last: 7, color: [ 0, 0, 1 ] },
+        { first: 10, last: 11, color: [ 0, 0.4019778072834015, 0 ] }
+    ]);
+});
+
 });
 
 describe ('Iges Import', function () {
