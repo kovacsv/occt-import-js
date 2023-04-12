@@ -25,6 +25,16 @@ static std::string GetLabelName (const TDF_Label& label)
     return name;
 }
 
+static std::string GetLabelName (const Handle (XCAFDoc_ShapeTool)& shapeTool, const TDF_Label& label)
+{
+    if (XCAFDoc_ShapeTool::IsReference (label)) {
+        TDF_Label referredShape;
+        shapeTool->GetReferredShape (label, referredShape);
+        return GetLabelName (shapeTool, referredShape);
+    }
+    return GetLabelName (label);
+}
+
 static bool IsFreeShape (const TDF_Label& label, const Handle (XCAFDoc_ShapeTool)& shapeTool)
 {
     TopoDS_Shape tmpShape;
@@ -37,7 +47,7 @@ static std::string GetShapeName (const TopoDS_Shape& shape, const Handle (XCAFDo
     if (!shapeTool->Search (shape, shapeLabel)) {
         return std::string ();
     }
-    return GetLabelName (shapeLabel);
+    return GetLabelName (shapeTool, shapeLabel);
 }
 
 static bool GetShapeColor (const TopoDS_Shape& shape, const Handle (XCAFDoc_ColorTool)& colorTool, Color& color)
@@ -168,7 +178,7 @@ public:
 
     virtual std::string GetName () const override
     {
-        return GetLabelName (label);
+        return GetLabelName (shapeTool, label);
     }
 
     virtual std::vector<NodePtr> GetChildren () const override

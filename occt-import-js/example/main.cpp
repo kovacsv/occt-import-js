@@ -71,6 +71,34 @@ static void WriteNode (const NodePtr& node, ObjWriter& writer)
     }
 }
 
+static void DumpNode (const NodePtr& node, int level)
+{
+    auto writeIndent = [](int indentLevel) {
+        for (int i = 0; i < indentLevel; i++) {
+            std::cout << "  ";
+        }
+    };
+
+    writeIndent (level);
+    std::cout << "-> Node: " << node->GetName ();
+    std::cout << std::endl;
+
+    node->EnumerateMeshes ([&](const Mesh& mesh) {
+        writeIndent (level);
+        std::cout << "   Mesh: " << mesh.GetName ();
+        Color color;
+        if (mesh.GetColor (color)) {
+            std::cout << " (" << color.r << ", " << color.g << ", " << color.b << ")";
+        }
+        std::cout << std::endl;
+    });
+
+    std::vector<NodePtr> children = node->GetChildren ();
+    for (const NodePtr& child : children) {
+        DumpNode (child, level + 1);
+    }
+}
+
 int main (int argc, const char* argv[])
 {
     if (argc < 2) {
@@ -104,8 +132,11 @@ int main (int argc, const char* argv[])
         return 1;
     }
 
-    ObjWriter writer;
-    WriteNode (importer->GetRootNode (), writer);
+    //ObjWriter writer;
+    //WriteNode (importer->GetRootNode (), writer);
 
+    DumpNode (importer->GetRootNode (), 0);
+
+    system ("PAUSE");
     return 0;
 }

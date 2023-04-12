@@ -97,17 +97,17 @@ it ('as1_pe_203', function () {
                         children : []
                     },
                     {
-                        name : "L_BRACKET_ASSEMBLY",
+                        name : "L_BRACKET_ASSEMBLY_ASM",
                         meshes : [1, 2, 3, 4, 5, 6, 7],
                         children : []
                     },
                     {
-                        name : "L_BRACKET_ASSEMBLY",
+                        name : "L_BRACKET_ASSEMBLY_ASM",
                         meshes : [8, 9, 10, 11, 12, 13, 14],
                         children : []
                     },
                     {
-                        name : "ROD",
+                        name : "ROD_ASM",
                         meshes : [15, 16, 17],
                         children : []
                     }
