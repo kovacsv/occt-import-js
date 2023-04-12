@@ -145,6 +145,13 @@ it ('dm1-id-214', function () {
     let result = LoadStepFile ('./test/testfiles/cax-if/dm1-id-214.stp');
     assert (result.success);
     assert.strictEqual (result.meshes.length, 7);
+    assert.deepStrictEqual (result.meshes[0].color, [ 1.0, 0.0, 0.0 ]);
+    assert.deepStrictEqual (result.meshes[1].color, [ 1.0, 0.39312317967414856, 0.0 ]);
+    assert.deepStrictEqual (result.meshes[2].color, [ 1.0, 0.39312317967414856, 0.0 ]);
+    assert.deepStrictEqual (result.meshes[3].color, [ 1.0, 0.39312317967414856, 0.0 ]);
+    assert.deepStrictEqual (result.meshes[4].color, [ 1.0, 0.08898153156042099, 0.0 ]);
+    assert.deepStrictEqual (result.meshes[5].color, [ 1.0, 0.08898153156042099, 0.0 ]);
+    assert.deepStrictEqual (result.meshes[6].color, [ 1.0, 0.08898153156042099, 0.0 ]);
 });
 
 it ('sg1-c5-214', function () {

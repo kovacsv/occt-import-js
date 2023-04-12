@@ -182,7 +182,7 @@ static TriangulationParams GetTriangulationParams (const emscripten::val& params
 
     if (paramsVal.hasOwnProperty ("angularDeflection")) {
         emscripten::val angularDeflection = paramsVal["angularDeflection"];
-        params.angularDeflection = angularDeflection.as<double> ();;
+        params.angularDeflection = angularDeflection.as<double> ();
         params.automatic = false;
     }
 
@@ -210,7 +210,7 @@ emscripten::val ReadBrepFile (const emscripten::val& content, const emscripten::
     return ReadFile (importer, content, triParams);
 }
 
-EMSCRIPTEN_BINDINGS (assimpjs)
+EMSCRIPTEN_BINDINGS (occtimportjs)
 {
     emscripten::function<emscripten::val, const emscripten::val&, const emscripten::val&> ("ReadStepFile", &ReadStepFile);
     emscripten::function<emscripten::val, const emscripten::val&, const emscripten::val&> ("ReadIgesFile", &ReadIgesFile);
