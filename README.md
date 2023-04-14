@@ -82,7 +82,7 @@ The result of the import is a JSON object with the following structure.
 - **meshes** (array): Array of mesh objects. The geometry representation is compatible with [three.js](https://github.com/mrdoob/three.js).
   - **name** (string): Name of the mesh.
   - **color** (array, optional): Array of r, g, and b values of the mesh color.
-  - **brep_faces** (array, optional): Array of brep faces
+  - **brep_faces** (array): Array representing the faces of the source b-rep.
     - **first** (number): The first triangle index of the face.
     - **last** (number): The last triangle index of the face.
     - **color** (array): Array of r, g, and b values of the color or null.
