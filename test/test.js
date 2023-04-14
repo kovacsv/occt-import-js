@@ -202,9 +202,12 @@ it ('cube-fcstd', function () {
     assert.deepStrictEqual (result.meshes[0].name, 'Cube');
     assert.deepStrictEqual (result.meshes[0].index.array.length, 36);
     assert.deepStrictEqual (result.meshes[0].color, [ 0.6038273572921753, 0.6038273572921753, 0.6038273572921753 ]);
-    assert.deepStrictEqual (result.meshes[0].face_colors, [
+    assert.deepStrictEqual (result.meshes[0].brep_faces, [
         { first: 0, last: 1, color: [ 1, 0, 0 ] },
+        { first: 2, last: 3, color: null },
+        { first: 4, last: 5, color: null },
         { first: 6, last: 7, color: [ 0, 0, 1 ] },
+        { first: 8, last: 9, color: null },
         { first: 10, last: 11, color: [ 0, 0.4019778072834015, 0 ] }
     ]);
 });
