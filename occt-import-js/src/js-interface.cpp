@@ -45,12 +45,12 @@ public:
             int vertexCount = 0;
             int normalCount = 0;
             int triangleCount = 0;
-            int faceColorCount = 0;
+            int brepFacesCount = 0;
 
             emscripten::val positionArr (emscripten::val::array ());
             emscripten::val normalArr (emscripten::val::array ());
             emscripten::val indexArr (emscripten::val::array ());
-            emscripten::val faceColorArr (emscripten::val::array ());
+            emscripten::val brepFacesArr (emscripten::val::array ());
 
             mesh.EnumerateFaces ([&](const Face& face) {
                 int triangleOffset = triangleCount;
@@ -73,19 +73,21 @@ public:
                     indexArr.set (triangleCount * 3 + 2, vertexOffset + v2);
                     triangleCount += 1;
                 });
+                emscripten::val brepFaceObj (emscripten::val::object ());
+                brepFaceObj.set ("first", triangleOffset);
+                brepFaceObj.set ("last", triangleCount - 1);
                 Color faceColor;
                 if (face.GetColor (faceColor)) {
-                    emscripten::val faceColorObj (emscripten::val::object ());
-                    faceColorObj.set ("first", triangleOffset);
-                    faceColorObj.set ("last", triangleCount - 1);
                     emscripten::val colorArr (emscripten::val::array ());
                     colorArr.set (0, faceColor.r);
                     colorArr.set (1, faceColor.g);
                     colorArr.set (2, faceColor.b);
-                    faceColorObj.set ("color", colorArr);
-                    faceColorArr.set (faceColorCount, faceColorObj);
-                    faceColorCount += 1;
+                    brepFaceObj.set ("color", colorArr);
+                } else {
+                    brepFaceObj.set ("color", emscripten::val::null ());
                 }
+                brepFacesArr.set (brepFacesCount, brepFaceObj);
+                brepFacesCount += 1;
             });
 
             emscripten::val meshObj (emscripten::val::object ());
@@ -99,9 +101,7 @@ public:
                 meshObj.set ("color", colorArr);
             }
 
-            if (faceColorCount > 0) {
-                meshObj.set ("face_colors", faceColorArr);
-            }
+            meshObj.set ("brep_faces", brepFacesArr);
 
             emscripten::val attributesObj (emscripten::val::object ());
 

@@ -4,3 +4,4 @@ build
 build_wasm
 package-lock.json
 __pycache__
+.idea
