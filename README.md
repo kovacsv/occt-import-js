@@ -45,12 +45,12 @@ After that, download the model file, and pass them to occt-import-js.
 
 ```js
 occtimportjs ().then (async function (occt) {
-	let fileUrl = '../test/testfiles/simple-basic-cube/cube.stp';
-	let response = await fetch (fileUrl);
-	let buffer = await response.arrayBuffer ();
-	let fileBuffer = new Uint8Array (buffer);
-	let result = occt.ReadStepFile (fileBuffer, null);
-	console.log (result);
+    let fileUrl = '../test/testfiles/simple-basic-cube/cube.stp';
+    let response = await fetch (fileUrl);
+    let buffer = await response.arrayBuffer ();
+    let fileBuffer = new Uint8Array (buffer);
+    let result = occt.ReadStepFile (fileBuffer, null);
+    console.log (result);
 });
 ```
 
@@ -63,10 +63,10 @@ let fs = require ('fs');
 const occtimportjs = require ('occt-import-js')();
 
 occtimportjs.then ((occt) => {
-	let fileUrl = '../test/testfiles/simple-basic-cube/cube.stp';
-	let fileContent = fs.readFileSync (fileUrl);
-	let result = occt.ReadStepFile (fileContent, null);
-	console.log (result);
+    let fileUrl = '../test/testfiles/simple-basic-cube/cube.stp';
+    let fileContent = fs.readFileSync (fileUrl);
+    let result = occt.ReadStepFile (fileContent, null);
+    console.log (result);
 });
 ```
 
