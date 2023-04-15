@@ -10,8 +10,8 @@ class HierarchyWriter
 {
 public:
     HierarchyWriter (emscripten::val& meshesArr) :
-        meshesArr (meshesArr),
-        meshCount (0)
+        mMeshesArr (meshesArr),
+        mMeshCount (0)
     {
     }
 
@@ -34,6 +34,7 @@ public:
         nodeObj.set ("children", childrenArr);
     }
 
+private:
     void WriteMeshes (const NodePtr& node, emscripten::val& nodeMeshesArr)
     {
         if (!node->IsMeshNode ()) {
@@ -42,15 +43,18 @@ public:
 
         int nodeMeshCount = 0;
         node->EnumerateMeshes ([&](const Mesh& mesh) {
+            emscripten::val meshObj (emscripten::val::object ());
+            meshObj.set ("name", mesh.GetName ());
+
             int vertexCount = 0;
             int normalCount = 0;
             int triangleCount = 0;
-            int brepFacesCount = 0;
+            int brepFaceCount = 0;
 
             emscripten::val positionArr (emscripten::val::array ());
             emscripten::val normalArr (emscripten::val::array ());
             emscripten::val indexArr (emscripten::val::array ());
-            emscripten::val brepFacesArr (emscripten::val::array ());
+            emscripten::val brepFaceArr (emscripten::val::array ());
 
             mesh.EnumerateFaces ([&](const Face& face) {
                 int triangleOffset = triangleCount;
@@ -86,22 +90,9 @@ public:
                 } else {
                     brepFaceObj.set ("color", emscripten::val::null ());
                 }
-                brepFacesArr.set (brepFacesCount, brepFaceObj);
-                brepFacesCount += 1;
+                brepFaceArr.set (brepFaceCount, brepFaceObj);
+                brepFaceCount += 1;
             });
-
-            emscripten::val meshObj (emscripten::val::object ());
-            meshObj.set ("name", mesh.GetName ());
-            Color meshColor;
-            if (mesh.GetColor (meshColor)) {
-                emscripten::val colorArr (emscripten::val::array ());
-                colorArr.set (0, meshColor.r);
-                colorArr.set (1, meshColor.g);
-                colorArr.set (2, meshColor.b);
-                meshObj.set ("color", colorArr);
-            }
-
-            meshObj.set ("brep_faces", brepFacesArr);
 
             emscripten::val attributesObj (emscripten::val::object ());
 
@@ -121,15 +112,26 @@ public:
             meshObj.set ("attributes", attributesObj);
             meshObj.set ("index", indexObj);
 
-            meshesArr.set (meshCount, meshObj);
-            nodeMeshesArr.set (nodeMeshCount, meshCount);
-            meshCount += 1;
+            Color meshColor;
+            if (mesh.GetColor (meshColor)) {
+                emscripten::val colorArr (emscripten::val::array ());
+                colorArr.set (0, meshColor.r);
+                colorArr.set (1, meshColor.g);
+                colorArr.set (2, meshColor.b);
+                meshObj.set ("color", colorArr);
+            }
+
+            meshObj.set ("brep_faces", brepFaceArr);
+
+            mMeshesArr.set (mMeshCount, meshObj);
+            nodeMeshesArr.set (nodeMeshCount, mMeshCount);
+            mMeshCount += 1;
             nodeMeshCount += 1;
         });
     }
 
-    emscripten::val& meshesArr;
-    int meshCount;
+    emscripten::val& mMeshesArr;
+    int mMeshCount;
 };
 
 static void EnumerateNodeMeshes (const NodePtr& node, const std::function<void (const Mesh&)>& onMesh)
