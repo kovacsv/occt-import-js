@@ -308,6 +308,7 @@ source_group ("OCCT" FILES ${OcctSourceFiles})
 if (${EMSCRIPTEN})
 	add_executable (OcctImportJS ${OcctImportJSSourceFiles} ${OcctSourceFiles})
 	target_compile_options (OcctImportJS PUBLIC "$<$<CONFIG:Debug>:-gsource-map>")
+	target_compile_options (OcctImportJS PUBLIC "$<$<CONFIG:Release>:-Oz>")
 	target_compile_options (OcctImportJS PUBLIC -fexceptions)
 
 	target_link_options (OcctImportJS PUBLIC -sMODULARIZE=1)
