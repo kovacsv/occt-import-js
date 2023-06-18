@@ -1,18 +1,41 @@
 let fs = require ('fs');
 const occtimportjs = require ('../dist/occt-import-js.js')();
 
+class TimeLogger
+{
+    constructor ()
+    {
+        this.beginDate = new Date ();
+    }
+
+    LogTime (message)
+    {
+        let currentDate = new Date ();
+        console.log (message + ': ' + (currentDate - this.beginDate).toString ());
+        this.beginDate = currentDate;
+    }
+}
+
 let args = process.argv.splice (2);
 if (args.length !== 2) {
+    console.log ('Usage: node stp_to_obj.js <stpFilePath> <objFilePath>');
     process.exit (1);
 }
 
 let stpFilePath = args[0];
 let objFilePath = args[1];
 
+let timeLogger = new TimeLogger ();
 occtimportjs.then ((occt) => {
+    timeLogger.LogTime ('Library load');
+
 	let fileContent = fs.readFileSync (stpFilePath);
+    timeLogger.LogTime ('File read');
+
 	let stpContent = occt.ReadStepFile (fileContent, null);
-	if (!stpContent.success) {
+    timeLogger.LogTime ('Step import');
+
+    if (!stpContent.success) {
         process.exit (1);
     }
 
@@ -60,6 +83,7 @@ occtimportjs.then ((occt) => {
         meshCount += 1;
         vertexCount += meshVertexCount;
     }
+    timeLogger.LogTime ('Obj export');
 
     objWriter.close ();
 });
