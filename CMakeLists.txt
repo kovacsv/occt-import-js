@@ -310,12 +310,13 @@ if (${EMSCRIPTEN})
 	target_compile_options (OcctImportJS PUBLIC "$<$<CONFIG:Debug>:-gsource-map>")
 	target_compile_options (OcctImportJS PUBLIC "$<$<CONFIG:Release>:-Oz>")
 	target_compile_options (OcctImportJS PUBLIC -fexceptions)
+	target_compile_options (OcctImportJS PUBLIC -fwasm-exceptions)
 
 	target_link_options (OcctImportJS PUBLIC -sMODULARIZE=1)
 	target_link_options (OcctImportJS PUBLIC -sEXPORT_NAME='occtimportjs')
 	target_link_options (OcctImportJS PUBLIC -sSTACK_SIZE=10MB)
 	target_link_options (OcctImportJS PUBLIC -sALLOW_MEMORY_GROWTH=1 --no-heap-copy)
-	target_link_options (OcctImportJS PUBLIC -sNO_DISABLE_EXCEPTION_CATCHING)
+	target_link_options (OcctImportJS PUBLIC -fwasm-exceptions)
 	
 	# to check for memory errors
 	# target_link_options (OcctImportJS PUBLIC -sASSERTIONS=1 -sSAFE_HEAP=1 -sWARN_UNALIGNED=1)
