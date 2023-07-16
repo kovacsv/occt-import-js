@@ -30,8 +30,14 @@ All functions have two parameters:
 
 - `content`: The file content as a `Uint8Array` object.
 - `params`: Triangulation parameters as an object, can be `null`.
-  - If the value is `null`, the triangulation density is calculated automatically based on the bounding boxes of elements.
-  - If the value is not `null`, the object can have two number values, `linearDeflection` and `angularDeflection`. You can find more information about these values [here](https://dev.opencascade.org/doc/overview/html/occt_user_guides__mesh.html).
+  - `linearUnit`: Defines the linear unit of the output. Possible values: `millimeter`, `centimeter`, `meter`, `inch`, `foot`. Default is `millimeter`. Has no effect on brep files.
+  - `linearDeflectionType`: Defines what the linear deflection value means. Default is `bounding_box_ratio`. Possible values:
+    - `bounding_box_ratio`: The `linearDeflection` value contains a ratio of the avarage bounding box.
+    - `absolute_value`: The `linearDeflection` value contains an absolute value in the unit defined by `linearUnit`.
+  - `linearDeflection`: The linear deflection value based on the value of the `linearDeflectionType` parameter.
+  - `angularDeflection`: The angular deflection value.
+
+You can find more information about deflection values [here](https://dev.opencascade.org/doc/overview/html/occt_user_guides__mesh.html).
 
 ### Use from the browser
 
