@@ -292,8 +292,8 @@ it ('Manual deflection with absolute value', function () {
 });
 
 it ('Manual deflection with absolute value and units', function () {
-    CheckVertexParamCount ({ lengthUnit : 'millimeter', linearDeflectionType : 'absolute_value', linearDeflection : 10 }, 162);
-	CheckVertexParamCount ({ lengthUnit : 'meter', linearDeflectionType : 'absolute_value', linearDeflection : 0.01 }, 162);
+    CheckVertexParamCount ({ linearUnit : 'millimeter', linearDeflectionType : 'absolute_value', linearDeflection : 10 }, 162);
+	CheckVertexParamCount ({ linearUnit : 'meter', linearDeflectionType : 'absolute_value', linearDeflection : 0.01 }, 162);
 });
 
 });
@@ -322,17 +322,17 @@ it ('Default unit is mm', function () {
 });
 
 it ('Convert to m', function () {
-	CheckXSize ({ lengthUnit : 'meter' }, 'cube-m.step', 1.0);
-	CheckXSize ({ lengthUnit : 'meter' }, 'cube-mm.step', 1.0);
-	CheckXSize ({ lengthUnit : 'meter' }, 'cube-in.step', 1.0);
+	CheckXSize ({ linearUnit : 'meter' }, 'cube-m.step', 1.0);
+	CheckXSize ({ linearUnit : 'meter' }, 'cube-mm.step', 1.0);
+	CheckXSize ({ linearUnit : 'meter' }, 'cube-in.step', 1.0);
 });
 
 it ('Convert to other units', function () {
-	CheckXSize ({ lengthUnit : 'millimeter' }, 'cube-m.step', 1000.0);
-	CheckXSize ({ lengthUnit : 'centimeter' }, 'cube-m.step', 100.0);
-	CheckXSize ({ lengthUnit : 'meter' }, 'cube-m.step', 1.0);
-	CheckXSize ({ lengthUnit : 'inch' }, 'cube-m.step', 39.37007);
-	CheckXSize ({ lengthUnit : 'foot' }, 'cube-m.step', 3.28084);
+	CheckXSize ({ linearUnit : 'millimeter' }, 'cube-m.step', 1000.0);
+	CheckXSize ({ linearUnit : 'centimeter' }, 'cube-m.step', 100.0);
+	CheckXSize ({ linearUnit : 'meter' }, 'cube-m.step', 1.0);
+	CheckXSize ({ linearUnit : 'inch' }, 'cube-m.step', 39.37007);
+	CheckXSize ({ linearUnit : 'foot' }, 'cube-m.step', 3.28084);
 });
 
 });

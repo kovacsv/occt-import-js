@@ -49,7 +49,7 @@ Node::~Node ()
 }
 
 ImportParams::ImportParams () :
-    lengthUnit (LengthUnit::Millimeter),
+    linearUnit (LinearUnit::Millimeter),
     linearDeflectionType (LinearDeflectionType::BoundingBoxRatio),
     linearDeflection (0.001),
     angularDeflection (0.5)

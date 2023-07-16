@@ -62,13 +62,7 @@ public:
 class ImportParams
 {
 public:
-    enum class LinearDeflectionType
-    {
-        BoundingBoxRatio,
-        AbsoluteValue
-    };
-
-    enum class LengthUnit
+    enum class LinearUnit
     {
         Millimeter,
         Centimeter,
@@ -77,9 +71,15 @@ public:
         Foot
     };
 
+    enum class LinearDeflectionType
+    {
+        BoundingBoxRatio,
+        AbsoluteValue
+    };
+
     ImportParams ();
 
-    LengthUnit lengthUnit;
+    LinearUnit linearUnit;
     LinearDeflectionType linearDeflectionType;
     double linearDeflection;
     double angularDeflection;

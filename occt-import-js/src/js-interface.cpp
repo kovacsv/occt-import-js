@@ -176,19 +176,19 @@ static ImportParams GetImportParams (const emscripten::val& paramsVal)
         return params;
     }
 
-    if (paramsVal.hasOwnProperty ("lengthUnit")) {
-        emscripten::val lengthUnit = paramsVal["lengthUnit"];
-        std::string lengthUnitStr = lengthUnit.as<std::string> ();
-        if (lengthUnitStr == "millimeter") {
-            params.lengthUnit = ImportParams::LengthUnit::Millimeter;
-        } else if (lengthUnitStr == "centimeter") {
-            params.lengthUnit = ImportParams::LengthUnit::Centimeter;
-        } else if (lengthUnitStr == "meter") {
-            params.lengthUnit = ImportParams::LengthUnit::Meter;
-        } else if (lengthUnitStr == "inch") {
-            params.lengthUnit = ImportParams::LengthUnit::Inch;
-        } else if (lengthUnitStr == "foot") {
-            params.lengthUnit = ImportParams::LengthUnit::Foot;
+    if (paramsVal.hasOwnProperty ("linearUnit")) {
+        emscripten::val linearUnit = paramsVal["linearUnit"];
+        std::string linearUnitStr = linearUnit.as<std::string> ();
+        if (linearUnitStr == "millimeter") {
+            params.linearUnit = ImportParams::LinearUnit::Millimeter;
+        } else if (linearUnitStr == "centimeter") {
+            params.linearUnit = ImportParams::LinearUnit::Centimeter;
+        } else if (linearUnitStr == "meter") {
+            params.linearUnit = ImportParams::LinearUnit::Meter;
+        } else if (linearUnitStr == "inch") {
+            params.linearUnit = ImportParams::LinearUnit::Inch;
+        } else if (linearUnitStr == "foot") {
+            params.linearUnit = ImportParams::LinearUnit::Foot;
         }
     }
 

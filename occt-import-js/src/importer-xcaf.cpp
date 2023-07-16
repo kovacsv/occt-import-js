@@ -372,20 +372,20 @@ Importer::Result ImporterXcaf::LoadFile (const std::vector<std::uint8_t>& fileCo
     document = new TDocStd_Document ("XmlXCAF");
 
     UnitsMethods_LengthUnit lengthUnit = UnitsMethods_LengthUnit_Millimeter;
-    switch (params.lengthUnit) {
-        case ImportParams::LengthUnit::Millimeter:
+    switch (params.linearUnit) {
+        case ImportParams::LinearUnit::Millimeter:
             lengthUnit = UnitsMethods_LengthUnit_Millimeter;
             break;
-        case ImportParams::LengthUnit::Centimeter:
+        case ImportParams::LinearUnit::Centimeter:
             lengthUnit = UnitsMethods_LengthUnit_Centimeter;
             break;
-        case ImportParams::LengthUnit::Meter:
+        case ImportParams::LinearUnit::Meter:
             lengthUnit = UnitsMethods_LengthUnit_Meter;
             break;
-        case ImportParams::LengthUnit::Inch:
+        case ImportParams::LinearUnit::Inch:
             lengthUnit = UnitsMethods_LengthUnit_Inch;
             break;
-        case ImportParams::LengthUnit::Foot:
+        case ImportParams::LinearUnit::Foot:
             lengthUnit = UnitsMethods_LengthUnit_Foot;
             break;
         default:
