@@ -1,6 +1,6 @@
 {
 	"name": "occt-import-js",
-	"version": "0.0.20",
+	"version": "0.0.21",
 	"description": "Javascript interface for the occt library.",
 	"license": "LGPL-2.1",
 	"main": "./dist/occt-import-js.js",
