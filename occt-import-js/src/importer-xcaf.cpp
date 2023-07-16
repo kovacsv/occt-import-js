@@ -307,7 +307,7 @@ private:
 class XcafRootNode : public Node
 {
 public:
-    XcafRootNode (const Handle (XCAFDoc_ShapeTool)& shapeTool, const Handle (XCAFDoc_ColorTool)& colorTool, const TriangulationParams& params) :
+    XcafRootNode (const Handle (XCAFDoc_ShapeTool)& shapeTool, const Handle (XCAFDoc_ColorTool)& colorTool, const ImportParams& params) :
         shapeTool (shapeTool),
         colorTool (colorTool),
         params (params)
@@ -354,7 +354,7 @@ public:
 private:
     const Handle (XCAFDoc_ShapeTool)& shapeTool;
     const Handle (XCAFDoc_ColorTool)& colorTool;
-    const TriangulationParams& params;
+    const ImportParams& params;
 };
 
 ImporterXcaf::ImporterXcaf () :
@@ -367,8 +367,32 @@ ImporterXcaf::ImporterXcaf () :
 
 }
 
-Importer::Result ImporterXcaf::LoadFile (const std::vector<std::uint8_t>& fileContent, const TriangulationParams& params)
+Importer::Result ImporterXcaf::LoadFile (const std::vector<std::uint8_t>& fileContent, const ImportParams& params)
 {
+    document = new TDocStd_Document ("XmlXCAF");
+
+    UnitsMethods_LengthUnit lengthUnit = UnitsMethods_LengthUnit_Millimeter;
+    switch (params.lengthUnit) {
+        case ImportParams::LengthUnit::Millimeter:
+            lengthUnit = UnitsMethods_LengthUnit_Millimeter;
+            break;
+        case ImportParams::LengthUnit::Centimeter:
+            lengthUnit = UnitsMethods_LengthUnit_Centimeter;
+            break;
+        case ImportParams::LengthUnit::Meter:
+            lengthUnit = UnitsMethods_LengthUnit_Meter;
+            break;
+        case ImportParams::LengthUnit::Inch:
+            lengthUnit = UnitsMethods_LengthUnit_Inch;
+            break;
+        case ImportParams::LengthUnit::Foot:
+            lengthUnit = UnitsMethods_LengthUnit_Foot;
+            break;
+        default:
+            return Importer::Result::ImportFailed;
+    }
+    XCAFDoc_DocumentTool::SetLengthUnit (document, 1.0, lengthUnit);
+
     if (!TransferToDocument (fileContent)) {
         return Importer::Result::ImportFailed;
     }

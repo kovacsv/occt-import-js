@@ -59,13 +59,28 @@ public:
     virtual void EnumerateMeshes (const std::function<void (const Mesh&)>& onMesh) const = 0;
 };
 
-class TriangulationParams
+class ImportParams
 {
 public:
-    TriangulationParams ();
-    TriangulationParams (double linearDeflection, double angularDeflection);
+    enum class LinearDeflectionType
+    {
+        BoundingBoxRatio,
+        AbsoluteValue
+    };
 
-    bool automatic;
+    enum class LengthUnit
+    {
+        Millimeter,
+        Centimeter,
+        Meter,
+        Inch,
+        Foot
+    };
+
+    ImportParams ();
+
+    LengthUnit lengthUnit;
+    LinearDeflectionType linearDeflectionType;
     double linearDeflection;
     double angularDeflection;
 };
@@ -83,8 +98,8 @@ public:
     Importer ();
     virtual ~Importer ();
 
-    Result LoadFile (const std::string& filePath, const TriangulationParams& params);
+    Result LoadFile (const std::string& filePath, const ImportParams& params);
 
-    virtual Result LoadFile (const std::vector<std::uint8_t>& fileContent, const TriangulationParams& params) = 0;
+    virtual Result LoadFile (const std::vector<std::uint8_t>& fileContent, const ImportParams& params) = 0;
     virtual NodePtr GetRootNode () const = 0;
 };

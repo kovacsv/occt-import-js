@@ -30,7 +30,7 @@ function LoadBrepFile (fileUrl)
     return occt.ReadBrepFile (fileContent, null);
 }
 
-function LoadStepFileWithDeflection (fileUrl, params)
+function LoadStepFileWithParams (fileUrl, params)
 {
     let fileContent = fs.readFileSync (fileUrl);
     return occt.ReadStepFile (fileContent, params);
@@ -267,23 +267,72 @@ it ('as1_pe_203', function () {
 
 describe ('Deflection', function () {
 
-function CheckResult (params, vertexParamCount) {
-    let result = LoadStepFileWithDeflection ('./test/testfiles/rounded-cube/rounded-cube.step', params);
+function CheckVertexParamCount (params, vertexParamCount) {
+    let result = LoadStepFileWithParams ('./test/testfiles/rounded-cube/rounded-cube.step', params);
     assert (result.success);
     assert.equal (vertexParamCount, result.meshes[0].attributes.position.array.length);
 }        
 
 it ('Auto deflection', function () {
-    CheckResult (null, 294);
-    CheckResult ({}, 294);
+    CheckVertexParamCount (null, 294);
+    CheckVertexParamCount ({}, 294);
 });
 
-it ('Manual deflection', function () {
-    CheckResult ({ linearDeflection : 10 }, 162);
-    CheckResult ({ linearDeflection : 20 }, 126);
+it ('Manual deflection with ratio of bounding box', function () {
+    CheckVertexParamCount ({ linearDeflectionType : 'bounding_box_ratio', linearDeflection : 0.001 }, 294);
+    CheckVertexParamCount ({ linearDeflectionType : 'bounding_box_ratio', linearDeflection : 0.1 }, 162);
+});
+
+it ('Manual deflection with absolute value', function () {
+    CheckVertexParamCount ({ linearDeflectionType : 'absolute_value', linearDeflection : 10 }, 162);
+    CheckVertexParamCount ({ linearDeflectionType : 'absolute_value', linearDeflection : 20 }, 126);
     
-    CheckResult ({ linearDeflection : 10, angularDeflection : 0.5 }, 162);
-    CheckResult ({ linearDeflection : 10, angularDeflection : 2.0 }, 114);
+    CheckVertexParamCount ({ linearDeflectionType : 'absolute_value', linearDeflection : 10, angularDeflection : 0.5 }, 162);
+    CheckVertexParamCount ({ linearDeflectionType : 'absolute_value', linearDeflection : 10, angularDeflection : 2.0 }, 114);
+});
+
+it ('Manual deflection with absolute value and units', function () {
+    CheckVertexParamCount ({ lengthUnit : 'millimeter', linearDeflectionType : 'absolute_value', linearDeflection : 10 }, 162);
+	CheckVertexParamCount ({ lengthUnit : 'meter', linearDeflectionType : 'absolute_value', linearDeflection : 0.01 }, 162);
+});
+
+});
+
+describe ('Units', function () {
+
+function CheckXSize (params, fileName, xSizeRef) {
+    let result = LoadStepFileWithParams ('./test/testfiles/cube-units/' + fileName, params);
+    assert (result.success);
+	let xMin = Infinity;
+	let xMax = -Infinity;
+	for (let mesh of result.meshes) {
+		for (let i = 0; i < mesh.attributes.position.array.length; i += 3) {
+			xMin = Math.min (mesh.attributes.position.array[i], xMin);
+			xMax = Math.max (mesh.attributes.position.array[i], xMax);
+		}
+	}
+	let xSize = xMax - xMin;
+	assert.ok (Math.abs (xSize - xSizeRef) < 1e-5);
+}
+
+it ('Default unit is mm', function () {
+	CheckXSize ({}, 'cube-m.step', 1000.0);
+	CheckXSize ({}, 'cube-mm.step', 1000.0);
+	CheckXSize ({}, 'cube-in.step', 1000.0);
+});
+
+it ('Convert to m', function () {
+	CheckXSize ({ lengthUnit : 'meter' }, 'cube-m.step', 1.0);
+	CheckXSize ({ lengthUnit : 'meter' }, 'cube-mm.step', 1.0);
+	CheckXSize ({ lengthUnit : 'meter' }, 'cube-in.step', 1.0);
+});
+
+it ('Convert to other units', function () {
+	CheckXSize ({ lengthUnit : 'millimeter' }, 'cube-m.step', 1000.0);
+	CheckXSize ({ lengthUnit : 'centimeter' }, 'cube-m.step', 100.0);
+	CheckXSize ({ lengthUnit : 'meter' }, 'cube-m.step', 1.0);
+	CheckXSize ({ lengthUnit : 'inch' }, 'cube-m.step', 39.37007);
+	CheckXSize ({ lengthUnit : 'foot' }, 'cube-m.step', 3.28084);
 });
 
 });

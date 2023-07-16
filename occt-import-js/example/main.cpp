@@ -126,14 +126,14 @@ int main (int argc, const char* argv[])
         return 1;
     }
 
-    TriangulationParams params;
+    ImportParams params;
     Importer::Result result = importer->LoadFile (argv[1], params);
     if (result != Importer::Result::Success) {
         return 1;
     }
 
-    //ObjWriter writer;
-    //WriteNode (importer->GetRootNode (), writer);
+    ObjWriter writer;
+    WriteNode (importer->GetRootNode (), writer);
 
     DumpNode (importer->GetRootNode (), 0);
 

@@ -48,18 +48,11 @@ Node::~Node ()
 
 }
 
-TriangulationParams::TriangulationParams () :
-    automatic (true),
-    linearDeflection (1.0),
+ImportParams::ImportParams () :
+    lengthUnit (LengthUnit::Millimeter),
+    linearDeflectionType (LinearDeflectionType::BoundingBoxRatio),
+    linearDeflection (0.001),
     angularDeflection (0.5)
-{
-
-}
-
-TriangulationParams::TriangulationParams (double linearDeflection, double angularDeflection) :
-    automatic (false),
-    linearDeflection (linearDeflection),
-    angularDeflection (angularDeflection)
 {
 
 }
@@ -74,7 +67,7 @@ Importer::~Importer ()
 
 }
 
-Importer::Result Importer::LoadFile (const std::string& filePath, const TriangulationParams& params)
+Importer::Result Importer::LoadFile (const std::string& filePath, const ImportParams& params)
 {
     std::ifstream inputStream (filePath, std::ios::binary);
     if (!inputStream.is_open ()) {

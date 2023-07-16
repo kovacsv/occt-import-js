@@ -95,12 +95,12 @@ bool OcctFace::HasTriangulation () const
     return true;
 }
 
-bool TriangulateShape (TopoDS_Shape& shape, const TriangulationParams& params)
+bool TriangulateShape (TopoDS_Shape& shape, const ImportParams& params)
 {
     Standard_Real linDeflection = params.linearDeflection;
     Standard_Real angDeflection = params.angularDeflection;
 
-    if (params.automatic) {
+    if (params.linearDeflectionType == ImportParams::LinearDeflectionType::BoundingBoxRatio) {
         Bnd_Box boundingBox;
         BRepBndLib::Add (shape, boundingBox, false);
         if (boundingBox.IsVoid ()) {
@@ -110,11 +110,10 @@ bool TriangulateShape (TopoDS_Shape& shape, const TriangulationParams& params)
         Standard_Real xMin, yMin, zMin, xMax, yMax, zMax;
         boundingBox.Get (xMin, yMin, zMin, xMax, yMax, zMax);
         Standard_Real avgSize = ((xMax - xMin) + (yMax - yMin) + (zMax - zMin)) / 3.0;
-        linDeflection = avgSize / 1000.0;
+        linDeflection = avgSize * params.linearDeflection;
         if (linDeflection < Precision::Confusion ()) {
-            linDeflection = 1.0;
+            linDeflection = 0.1;
         }
-        angDeflection = 0.5;
     }
 
     BRepMesh_IncrementalMesh mesh (shape, linDeflection, Standard_False, angDeflection);

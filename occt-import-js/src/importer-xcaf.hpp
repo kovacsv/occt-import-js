@@ -11,7 +11,7 @@ class ImporterXcaf : public Importer
 public:
     ImporterXcaf ();
 
-    virtual Result LoadFile (const std::vector<std::uint8_t>& fileContent, const TriangulationParams& params) override;
+    virtual Result LoadFile (const std::vector<std::uint8_t>& fileContent, const ImportParams& params) override;
     virtual NodePtr GetRootNode () const override;
 
 protected:

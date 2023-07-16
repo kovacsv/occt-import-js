@@ -145,7 +145,7 @@ static void EnumerateNodeMeshes (const NodePtr& node, const std::function<void (
     }
 }
 
-static emscripten::val ReadFile (ImporterPtr importer, const emscripten::val& content, const TriangulationParams& params)
+static emscripten::val ReadFile (ImporterPtr importer, const emscripten::val& content, const ImportParams& params)
 {
     emscripten::val resultObj (emscripten::val::object ());
 
@@ -169,23 +169,47 @@ static emscripten::val ReadFile (ImporterPtr importer, const emscripten::val& co
     return resultObj;
 }
 
-static TriangulationParams GetTriangulationParams (const emscripten::val& paramsVal)
+static ImportParams GetImportParams (const emscripten::val& paramsVal)
 {
-    TriangulationParams params;
+    ImportParams params;
     if (paramsVal.isUndefined () || paramsVal.isNull ()) {
         return params;
+    }
+
+    if (paramsVal.hasOwnProperty ("lengthUnit")) {
+        emscripten::val lengthUnit = paramsVal["lengthUnit"];
+        std::string lengthUnitStr = lengthUnit.as<std::string> ();
+        if (lengthUnitStr == "millimeter") {
+            params.lengthUnit = ImportParams::LengthUnit::Millimeter;
+        } else if (lengthUnitStr == "centimeter") {
+            params.lengthUnit = ImportParams::LengthUnit::Centimeter;
+        } else if (lengthUnitStr == "meter") {
+            params.lengthUnit = ImportParams::LengthUnit::Meter;
+        } else if (lengthUnitStr == "inch") {
+            params.lengthUnit = ImportParams::LengthUnit::Inch;
+        } else if (lengthUnitStr == "foot") {
+            params.lengthUnit = ImportParams::LengthUnit::Foot;
+        }
+    }
+
+    if (paramsVal.hasOwnProperty ("linearDeflectionType")) {
+        emscripten::val linearDeflectionType = paramsVal["linearDeflectionType"];
+        std::string linearDeflectionTypeStr = linearDeflectionType.as<std::string> ();
+        if (linearDeflectionTypeStr == "bounding_box_ratio") {
+            params.linearDeflectionType = ImportParams::LinearDeflectionType::BoundingBoxRatio;
+        } else if (linearDeflectionTypeStr == "absolute_value") {
+            params.linearDeflectionType = ImportParams::LinearDeflectionType::AbsoluteValue;
+        }
     }
 
     if (paramsVal.hasOwnProperty ("linearDeflection")) {
         emscripten::val linearDeflection = paramsVal["linearDeflection"];
         params.linearDeflection = linearDeflection.as<double> ();
-        params.automatic = false;
     }
 
     if (paramsVal.hasOwnProperty ("angularDeflection")) {
         emscripten::val angularDeflection = paramsVal["angularDeflection"];
         params.angularDeflection = angularDeflection.as<double> ();
-        params.automatic = false;
     }
 
     return params;
@@ -194,22 +218,22 @@ static TriangulationParams GetTriangulationParams (const emscripten::val& params
 emscripten::val ReadStepFile (const emscripten::val& content, const emscripten::val& params)
 {
     ImporterPtr importer = std::make_shared<ImporterStep> ();
-    TriangulationParams triParams = GetTriangulationParams (params);
-    return ReadFile (importer, content, triParams);
+    ImportParams importParams = GetImportParams (params);
+    return ReadFile (importer, content, importParams);
 }
 
 emscripten::val ReadIgesFile (const emscripten::val& content, const emscripten::val& params)
 {
     ImporterPtr importer = std::make_shared<ImporterIges> ();
-    TriangulationParams triParams = GetTriangulationParams (params);
-    return ReadFile (importer, content, triParams);
+    ImportParams importParams = GetImportParams (params);
+    return ReadFile (importer, content, importParams);
 }
 
 emscripten::val ReadBrepFile (const emscripten::val& content, const emscripten::val& params)
 {
     ImporterPtr importer = std::make_shared<ImporterBrep> ();
-    TriangulationParams triParams = GetTriangulationParams (params);
-    return ReadFile (importer, content, triParams);
+    ImportParams importParams = GetImportParams (params);
+    return ReadFile (importer, content, importParams);
 }
 
 EMSCRIPTEN_BINDINGS (occtimportjs)

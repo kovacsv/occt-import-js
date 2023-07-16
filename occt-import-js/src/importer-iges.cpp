@@ -30,7 +30,6 @@ bool ImporterIges::TransferToDocument (const std::vector<std::uint8_t>& fileCont
         return false;
     }
 
-    document = new TDocStd_Document ("XmlXCAF");
     if (!igesCafReader.Transfer (document)) {
         std::remove (dummyFileName.c_str ());
         return false;

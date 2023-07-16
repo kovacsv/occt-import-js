@@ -25,7 +25,6 @@ bool ImporterStep::TransferToDocument (const std::vector<std::uint8_t>& fileCont
         return false;
     }
 
-    document = new TDocStd_Document ("XmlXCAF");
     if (!stepCafReader.Transfer (document)) {
         return false;
     }
