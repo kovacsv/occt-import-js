@@ -13,27 +13,27 @@
 class VectorBuffer : public std::streambuf
 {
 public:
-	VectorBuffer (const std::vector<uint8_t>& v);
+    VectorBuffer (const std::vector<uint8_t>& v);
 };
 
 class OcctFace : public Face
 {
 public:
-	OcctFace (const TopoDS_Face& face);
+    OcctFace (const TopoDS_Face& face);
 
-	virtual bool HasNormals () const override;
-	virtual bool GetColor (Color& color) const override;
+    virtual bool HasNormals () const override;
+    virtual bool GetColor (Color& color) const override;
 
-	virtual void EnumerateVertices (const std::function<void (double, double, double)>& onVertex) const override;
-	virtual void EnumerateNormals (const std::function<void (double, double, double)>& onNormal) const override;
-	virtual void EnumerateTriangles (const std::function<void (int, int, int)>& onTriangle) const override;
+    virtual void EnumerateVertices (const std::function<void (double, double, double)>& onVertex) const override;
+    virtual void EnumerateNormals (const std::function<void (double, double, double)>& onNormal) const override;
+    virtual void EnumerateTriangles (const std::function<void (int, int, int)>& onTriangle) const override;
 
 protected:
-	bool HasTriangulation () const;
+    bool HasTriangulation () const;
 
-	const TopoDS_Face& face;
-	Handle (Poly_Triangulation) triangulation;
-	TopLoc_Location location;
+    const TopoDS_Face& face;
+    Handle (Poly_Triangulation) triangulation;
+    TopLoc_Location location;
 };
 
 bool TriangulateShape (TopoDS_Shape& shape, const ImportParams& params);
