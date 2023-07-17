@@ -127,6 +127,7 @@ int main (int argc, const char* argv[])
     }
 
     ImportParams params;
+    params.linearUnit = ImportParams::LinearUnit::Meter;
     Importer::Result result = importer->LoadFile (argv[1], params);
     if (result != Importer::Result::Success) {
         return 1;

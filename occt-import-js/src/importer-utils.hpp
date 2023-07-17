@@ -6,6 +6,7 @@
 #include <TopoDS_Face.hxx>
 #include <TopLoc_Location.hxx>
 #include <Poly_Triangulation.hxx>
+#include <UnitsMethods_LengthUnit.hxx>
 
 #include <vector>
 #include <fstream>
@@ -36,4 +37,5 @@ protected:
     TopLoc_Location location;
 };
 
+UnitsMethods_LengthUnit LinearUnitToLengthUnit (ImportParams::LinearUnit linearUnit);
 bool TriangulateShape (TopoDS_Shape& shape, const ImportParams& params);

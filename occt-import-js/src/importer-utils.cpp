@@ -9,6 +9,7 @@
 #include <Bnd_Box.hxx>
 #include <BRepBndLib.hxx>
 #include <BRepMesh_IncrementalMesh.hxx>
+#include <UnitsMethods.hxx>
 
 VectorBuffer::VectorBuffer (const std::vector<uint8_t>& v)
 {
@@ -95,6 +96,25 @@ bool OcctFace::HasTriangulation () const
     return true;
 }
 
+UnitsMethods_LengthUnit LinearUnitToLengthUnit (ImportParams::LinearUnit linearUnit)
+{
+    UnitsMethods_LengthUnit lengthUnit = UnitsMethods_LengthUnit_Millimeter;
+    switch (linearUnit) {
+        case ImportParams::LinearUnit::Millimeter:
+            return UnitsMethods_LengthUnit_Millimeter;
+        case ImportParams::LinearUnit::Centimeter:
+            return  UnitsMethods_LengthUnit_Centimeter;
+        case ImportParams::LinearUnit::Meter:
+            return UnitsMethods_LengthUnit_Meter;
+        case ImportParams::LinearUnit::Inch:
+            return UnitsMethods_LengthUnit_Inch;
+        case ImportParams::LinearUnit::Foot:
+            return UnitsMethods_LengthUnit_Foot;
+        default:
+            return UnitsMethods_LengthUnit_Millimeter;
+    }
+}
+
 bool TriangulateShape (TopoDS_Shape& shape, const ImportParams& params)
 {
     Standard_Real linDeflection = params.linearDeflection;
@@ -112,7 +132,12 @@ bool TriangulateShape (TopoDS_Shape& shape, const ImportParams& params)
         Standard_Real avgSize = ((xMax - xMin) + (yMax - yMin) + (zMax - zMin)) / 3.0;
         linDeflection = avgSize * params.linearDeflection;
         if (linDeflection < Precision::Confusion ()) {
-            linDeflection = 0.1;
+            // use 1mm in the current unit
+            double mmToUnit = UnitsMethods::GetLengthUnitScale (
+                UnitsMethods_LengthUnit_Millimeter,
+                LinearUnitToLengthUnit (params.linearUnit)
+            );
+            linDeflection = 1.0 * mmToUnit;
         }
     }
 
