@@ -13,7 +13,7 @@ jobs:
 
     strategy:
       matrix:
-        os-type: [windows-latest]
+        os-type: [windows-2022]
 
     steps:
     - uses: actions/checkout@v2
