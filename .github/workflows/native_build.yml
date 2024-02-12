@@ -13,7 +13,7 @@ jobs:
 
     strategy:
       matrix:
-        os-type: [windows-2022, macos-12]
+        os-type: [windows-2022]
         configuration: [RelWithDebInfo]
 
     steps:
