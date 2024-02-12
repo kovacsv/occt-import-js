@@ -13,14 +13,14 @@ jobs:
 
     strategy:
       matrix:
-        os-type: [windows-latest]
-        configuration: [Release]
+        os-type: [windows-2022, macos-12]
+        configuration: [RelWithDebInfo]
 
     steps:
     - uses: actions/checkout@v2
       with:
         submodules: true
     - name: Configure
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.configuration}} -DCMAKE_BUILD_TYPE=%2
+      run: cmake -B ${{github.workspace}}/build
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{matrix.configuration}}
