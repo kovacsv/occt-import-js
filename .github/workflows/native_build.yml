@@ -19,7 +19,7 @@ jobs:
     - name: Configure
       run: cmake -B build/${{matrix.toolset}} -G "Visual Studio 17 2022" -A x64 -T ${{matrix.toolset}}
     - name: Build
-      run: cmake --build ${{github.workspace}}/build --config ${{matrix.configuration}}
+      run: cmake --build build/${{matrix.toolset}} --config ${{matrix.configuration}}
     - name: Upload
       uses: actions/upload-artifact@v3
       with:
