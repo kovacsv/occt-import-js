@@ -20,7 +20,7 @@ jobs:
     - name: Upload
       uses: actions/upload-artifact@v3
       with:
-        name: OcctImportJS_Win_${{matrix.toolset}}_${{matrix.configuration}}.lib
+        name: OcctImportJS_VS_${{matrix.toolset}}_${{matrix.configuration}}
         path: build/${{matrix.toolset}}/${{matrix.configuration}}/occt-import-js.lib
 
   build_mac:
@@ -43,5 +43,5 @@ jobs:
     - name: Upload
       uses: actions/upload-artifact@v3
       with:
-        name: OcctImportJS_Mac_${{matrix.xcode}}_${{matrix.configuration}}.a
+        name: OcctImportJS_Xcode_${{matrix.xcode}}_${{matrix.configuration}}
         path: build/${{matrix.xcode}}/${{matrix.configuration}}/libocct-import-js.a
