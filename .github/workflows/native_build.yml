@@ -5,11 +5,11 @@ on: [push, pull_request]
 jobs:
   build:
 
-    runs-on: ${{matrix.os-type}}
+    runs-on: [windows-2022]
 
     strategy:
       matrix:
-        os-type: [windows-2022]
+        toolset: [v142, v143]
         configuration: [RelWithDebInfo]
 
     steps:
@@ -17,6 +17,11 @@ jobs:
       with:
         submodules: true
     - name: Configure
-      run: cmake -B ${{github.workspace}}/build
+      run: cmake -B build/${{matrix.toolset}} -G "Visual Studio 17 2022" -A x64 -T ${{matrix.toolset}}
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{matrix.configuration}}
+    - name: Upload
+      uses: actions/upload-artifact@v3
+      with:
+        name: OcctImportJS_Win_${{matrix.toolset}}_${{matrix.configuration}}.lib
+        path: build/${{matrix.toolset}}/${{matrix.configuration}}/occt-import-js.lib
