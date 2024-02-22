@@ -6,6 +6,7 @@ set (CMAKE_CONFIGURATION_TYPES Debug;Release;RelWithDebInfo;MinSizeRel)
 add_definitions (-DUNICODE -D_UNICODE)
 
 project (OcctImportJS)
+set (CMAKE_CXX_STANDARD 11)
 
 # OcctImportJS
 

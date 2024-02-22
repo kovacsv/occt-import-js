@@ -12,13 +12,13 @@ jobs:
         os-type: [windows-2022]
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
       with:
         submodules: true
-    - name: Setup node.js 17.x
-      uses: actions/setup-node@v2
+    - name: Setup node.js
+      uses: actions/setup-node@v4
       with:
-        node-version: 17.x
+        node-version: 18.x
     - name: Get Emscripten
       run: ./tools/setup_emscripten_win.bat
     - name: Build WASM

@@ -3,17 +3,14 @@ name: Native Build
 on: [push, pull_request]
 
 jobs:
-  build:
-
+  build_win:
     runs-on: [windows-2022]
-
     strategy:
       matrix:
         toolset: [v142, v143]
         configuration: [RelWithDebInfo]
-
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - name: Configure
@@ -25,3 +22,26 @@ jobs:
       with:
         name: OcctImportJS_Win_${{matrix.toolset}}_${{matrix.configuration}}.lib
         path: build/${{matrix.toolset}}/${{matrix.configuration}}/occt-import-js.lib
+
+  build_mac:
+    runs-on: [macos-13]
+    strategy:
+      matrix:
+        xcode: [14.2]
+        configuration: [RelWithDebInfo]
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - name: Setup xcode
+      if: runner.os == 'macOS'
+      run: sudo xcode-select -s /Applications/Xcode_${{matrix.xcode}}.app
+    - name: Configure
+      run: cmake -B build/${{matrix.xcode}} -G "Xcode" -DCMAKE_OSX_ARCHITECTURES="x86_64"
+    - name: Build
+      run: cmake --build build/${{matrix.xcode}} --config ${{matrix.configuration}}
+    - name: Upload
+      uses: actions/upload-artifact@v3
+      with:
+        name: OcctImportJS_Mac_${{matrix.xcode}}_${{matrix.configuration}}.a
+        path: build/${{matrix.xcode}}/${{matrix.configuration}}/occt-import-js.a
