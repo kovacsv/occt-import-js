@@ -44,4 +44,4 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: OcctImportJS_Mac_${{matrix.xcode}}_${{matrix.configuration}}.a
-        path: build/${{matrix.xcode}}/${{matrix.configuration}}/occt-import-js.a
+        path: build/${{matrix.xcode}}/${{matrix.configuration}}/libocct-import-js.a
