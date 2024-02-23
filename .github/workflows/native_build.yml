@@ -45,3 +45,15 @@ jobs:
       with:
         name: OcctImportJS_Xcode_${{matrix.xcode}}_${{matrix.configuration}}
         path: build/${{matrix.xcode}}/${{matrix.configuration}}/libocct-import-js.a
+
+  publish_headers:
+    runs-on: [ubuntu-latest]
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - name: Upload
+      uses: actions/upload-artifact@v3
+      with:
+        name: Headers
+        path: occt-import-js/src/*.hpp
