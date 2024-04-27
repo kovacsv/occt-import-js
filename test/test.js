@@ -12,6 +12,12 @@ before (async function () {
     occt = await occtimportjs;
 });
 
+function LoadFile (format, fileUrl)
+{
+    let fileContent = fs.readFileSync (fileUrl);
+    return occt.ReadFile (format, fileContent, null);
+}
+
 function LoadStepFile (fileUrl)
 {
     let fileContent = fs.readFileSync (fileUrl);
@@ -333,6 +339,21 @@ it ('Convert to other units', function () {
 	CheckXSize ({ linearUnit : 'meter' }, 'cube-m.step', 1.0);
 	CheckXSize ({ linearUnit : 'inch' }, 'cube-m.step', 39.37007);
 	CheckXSize ({ linearUnit : 'foot' }, 'cube-m.step', 3.28084);
+});
+
+});
+
+describe ('General Import', function () {
+
+it ('Format string test', function () {
+    let stepResult = LoadFile ('step', './test/testfiles/simple-basic-cube/cube.stp');
+    assert (stepResult.success);
+    let igesResult = LoadFile ('iges', './test/testfiles/cube-10x10mm/Cube 10x10.igs');
+    assert (igesResult.success);
+    let brepResult = LoadFile ('brep', './test/testfiles/cax-if-brep/as1_pe_203.brep');
+    assert (brepResult.success);
+    let otherResult = LoadFile ('other', './test/testfiles/simple-basic-cube/cube.stp');
+    assert (!otherResult.success);
 });
 
 });

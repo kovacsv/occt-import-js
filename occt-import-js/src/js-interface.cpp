@@ -145,12 +145,12 @@ static void EnumerateNodeMeshes (const NodePtr& node, const std::function<void (
     }
 }
 
-static emscripten::val ReadFile (ImporterPtr importer, const emscripten::val& content, const ImportParams& params)
+static emscripten::val ImportFile (ImporterPtr importer, const emscripten::val& buffer, const ImportParams& params)
 {
     emscripten::val resultObj (emscripten::val::object ());
 
-    const std::vector<uint8_t>& contentArr = emscripten::vecFromJSArray<std::uint8_t> (content);
-    Importer::Result importResult = importer->LoadFile (contentArr, params);
+    const std::vector<uint8_t>& bufferArr = emscripten::vecFromJSArray<std::uint8_t> (buffer);
+    Importer::Result importResult = importer->LoadFile (bufferArr, params);
     resultObj.set ("success", importResult == Importer::Result::Success);
     if (importResult != Importer::Result::Success) {
         return resultObj;
@@ -215,29 +215,46 @@ static ImportParams GetImportParams (const emscripten::val& paramsVal)
     return params;
 }
 
-emscripten::val ReadStepFile (const emscripten::val& content, const emscripten::val& params)
+emscripten::val ReadStepFile (const emscripten::val& buffer, const emscripten::val& params)
 {
     ImporterPtr importer = std::make_shared<ImporterStep> ();
     ImportParams importParams = GetImportParams (params);
-    return ReadFile (importer, content, importParams);
+    return ImportFile (importer, buffer, importParams);
 }
 
-emscripten::val ReadIgesFile (const emscripten::val& content, const emscripten::val& params)
+emscripten::val ReadIgesFile (const emscripten::val& buffer, const emscripten::val& params)
 {
     ImporterPtr importer = std::make_shared<ImporterIges> ();
     ImportParams importParams = GetImportParams (params);
-    return ReadFile (importer, content, importParams);
+    return ImportFile (importer, buffer, importParams);
 }
 
-emscripten::val ReadBrepFile (const emscripten::val& content, const emscripten::val& params)
+emscripten::val ReadBrepFile (const emscripten::val& buffer, const emscripten::val& params)
 {
     ImporterPtr importer = std::make_shared<ImporterBrep> ();
     ImportParams importParams = GetImportParams (params);
-    return ReadFile (importer, content, importParams);
+    return ImportFile (importer, buffer, importParams);
+}
+
+emscripten::val ReadFile (const std::string& format, const emscripten::val& buffer, const emscripten::val& params)
+{
+    if (format == "step") {
+        return ReadStepFile (buffer, params);
+    } else if (format == "iges") {
+        return ReadIgesFile (buffer, params);
+    } else if (format == "brep") {
+        return ReadBrepFile (buffer, params);
+    } else {
+        emscripten::val resultObj (emscripten::val::object ());
+        resultObj.set ("success", false);
+        return resultObj;
+    }
 }
 
 EMSCRIPTEN_BINDINGS (occtimportjs)
 {
+    emscripten::function<emscripten::val, const std::string&, const emscripten::val&, const emscripten::val&> ("ReadFile", &ReadFile);
+
     emscripten::function<emscripten::val, const emscripten::val&, const emscripten::val&> ("ReadStepFile", &ReadStepFile);
     emscripten::function<emscripten::val, const emscripten::val&, const emscripten::val&> ("ReadIgesFile", &ReadIgesFile);
     emscripten::function<emscripten::val, const emscripten::val&, const emscripten::val&> ("ReadBrepFile", &ReadBrepFile);

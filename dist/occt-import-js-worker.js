@@ -2,14 +2,12 @@ importScripts ('occt-import-js.js');
 
 onmessage = async function (ev)
 {
-	let occt = await occtimportjs ();
-	let result = null;
-	if (ev.data.format === 'step') {
-		result = occt.ReadStepFile (ev.data.buffer, ev.data.params);
-	} else if (ev.data.format === 'iges') {
-		result = occt.ReadIgesFile (ev.data.buffer, ev.data.params);
-	} else if (ev.data.format === 'brep') {
-		result = occt.ReadBrepFile (ev.data.buffer, ev.data.params);
-	}
+	let modulOverrides = {
+		locateFile: function (path) {
+			return path;
+		}
+	};
+	let occt = await occtimportjs (modulOverrides);
+	let result = occt.ReadFile (ev.data.format, ev.data.buffer, ev.data.params);
 	postMessage (result);
 };
