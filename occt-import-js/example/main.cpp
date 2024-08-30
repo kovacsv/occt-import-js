@@ -37,6 +37,10 @@ public:
                 std::cout << "    Normal: " << x << ", " << y << ", " << z << std::endl;
                 objFile << "vn " << x << " " << y << " " << z << std::endl;
             });
+            face.EnumerateUVs ([&](double u, double v) {
+                std::cout << "    UVs: " << u << ", " << v << std::endl;
+                objFile << "vt " << u << " " << v << std::endl;
+            });
             face.EnumerateTriangles ([&](int v0, int v1, int v2) {
                 std::cout << "    Triangle: " << v0 << ", " << v1 << ", " << v2 << std::endl;
                 objFile << "f ";
@@ -45,6 +49,7 @@ public:
                 objFile << (vertexCount + v2 + 1) << "//" << (vertexCount + v2 + 1) << " ";
                 objFile << std::endl;
             });
+
             std::cout << "  Face End" << std::endl;
             vertexCount += faceVertexCount;
         });
