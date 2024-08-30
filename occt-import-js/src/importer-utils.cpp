@@ -87,6 +87,19 @@ void OcctFace::EnumerateTriangles (const std::function<void (int, int, int)>& on
         }
     }
 }
+void OcctFace::EnumerateUVs (const std::function<void (double, double)>& onUV) const
+{
+    if (!HasTriangulation () || !triangulation->HasUVNodes ()) {
+        return;
+    }
+
+    const auto& uvNodes = triangulation->NbNodes ();
+    for (Standard_Integer i = 1; i <= triangulation->NbNodes (); ++i) {
+        gp_Pnt2d uv = triangulation->UVNode (i);
+        double u = uv.X ();
+        onUV (uv.X (), uv.Y ());
+    }
+}
 
 bool OcctFace::HasTriangulation () const
 {

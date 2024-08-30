@@ -6,6 +6,7 @@
 #include "importer-brep.hpp"
 #include <emscripten/bind.h>
 
+
 class HierarchyWriter
 {
 public:
@@ -50,11 +51,13 @@ private:
             int normalCount = 0;
             int triangleCount = 0;
             int brepFaceCount = 0;
+            int uvCount = 0;
 
             emscripten::val positionArr (emscripten::val::array ());
             emscripten::val normalArr (emscripten::val::array ());
             emscripten::val indexArr (emscripten::val::array ());
             emscripten::val brepFaceArr (emscripten::val::array ());
+            emscripten::val uvArr (emscripten::val::array ());
 
             mesh.EnumerateFaces ([&](const Face& face) {
                 int triangleOffset = triangleCount;
@@ -76,6 +79,11 @@ private:
                     indexArr.set (triangleCount * 3 + 1, vertexOffset + v1);
                     indexArr.set (triangleCount * 3 + 2, vertexOffset + v2);
                     triangleCount += 1;
+                });
+                face.EnumerateUVs ([&](double u, double v) {
+                    uvArr.set (uvCount * 2, u);
+                    uvArr.set (uvCount * 2 + 1, v);
+                    uvCount += 1;
                 });
                 emscripten::val brepFaceObj (emscripten::val::object ());
                 brepFaceObj.set ("first", triangleOffset);
@@ -106,6 +114,10 @@ private:
                 attributesObj.set ("normal", normalObj);
             }
 
+            emscripten::val uvObj (emscripten::val::object ());
+            uvObj.set ("array", uvArr);
+            attributesObj.set ("uv", uvObj);
+
             emscripten::val indexObj (emscripten::val::object ());
             indexObj.set ("array", indexArr);
 
@@ -127,10 +139,10 @@ private:
             nodeMeshesArr.set (nodeMeshCount, mMeshCount);
             mMeshCount += 1;
             nodeMeshCount += 1;
-        });
+            });
     }
 
-    emscripten::val& mMeshesArr;
+    emscripten::val &mMeshesArr;
     int mMeshCount;
 };
 
