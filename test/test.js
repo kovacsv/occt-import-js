@@ -218,6 +218,24 @@ it ('cube-fcstd', function () {
     ]);
 });
 
+it ('conical-surface', function () {
+    let result = LoadStepFile ('./test/testfiles/conical-surface/conical-surface.step');
+    assert (result.success);
+    assert.deepStrictEqual (result.root, {
+        name : "",
+        meshes : [],
+        children : [
+            {
+                name : "(Unsaved)",
+                meshes : [ 0 ],
+                children : []
+            }
+        ]
+    });
+    assert.strictEqual (result.meshes.length, 1);
+    assert.equal (3954, result.meshes[0].index.array.length);
+});
+
 });
 
 describe ('Iges Import', function () {

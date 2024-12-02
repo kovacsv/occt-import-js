@@ -32,7 +32,7 @@ All functions have two parameters:
 - `params`: Triangulation parameters as an object, can be `null`.
   - `linearUnit`: Defines the linear unit of the output. Possible values: `millimeter`, `centimeter`, `meter`, `inch`, `foot`. Default is `millimeter`. Has no effect on brep files.
   - `linearDeflectionType`: Defines what the linear deflection value means. Default is `bounding_box_ratio`. Possible values:
-    - `bounding_box_ratio`: The `linearDeflection` value contains a ratio of the avarage bounding box.
+    - `bounding_box_ratio`: The `linearDeflection` value contains a ratio of the average bounding box.
     - `absolute_value`: The `linearDeflection` value contains an absolute value in the unit defined by `linearUnit`.
   - `linearDeflection`: The linear deflection value based on the value of the `linearDeflectionType` parameter.
   - `angularDeflection`: The angular deflection value.
