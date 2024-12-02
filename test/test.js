@@ -2,7 +2,7 @@ var fs = require ('fs');
 var path = require ('path');
 var assert = require ('assert');
 
-var occtimportjs = require ('../build_wasm/Release/occt-import-js.js')();
+var occtimportjs = require ('../build/wasm/Release/occt-import-js.js')();
 
 var occt = null;
 before (async function () {
