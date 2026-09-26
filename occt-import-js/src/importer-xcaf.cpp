@@ -36,10 +36,10 @@ static std::string GetLabelName (const TDF_Label& label, const Handle (XCAFDoc_S
     return GetLabelNameNoRef (label);
 }
 
-static std::string GetShapeName (const TopoDS_Shape& shape, const Handle (XCAFDoc_ShapeTool)& shapeTool)
+static std::string GetShapeName (const TopoDS_Shape& shape, const Handle (XCAFDoc_ShapeTool)& shapeTool, const XcafLookup& lookup)
 {
     TDF_Label shapeLabel;
-    if (!shapeTool->Search (shape, shapeLabel)) {
+    if (!lookup.Search (shape, shapeLabel)) {
         return std::string ();
     }
     return GetLabelName (shapeLabel, shapeTool);
@@ -79,13 +79,81 @@ static bool GetLabelColor (const TDF_Label& label, const Handle (XCAFDoc_ShapeTo
     return false;
 }
 
-static bool GetShapeColor (const TopoDS_Shape& shape, const Handle (XCAFDoc_ShapeTool)& shapeTool, const Handle (XCAFDoc_ColorTool)& colorTool, Color& color)
+static bool GetShapeColor (const TopoDS_Shape& shape, const Handle (XCAFDoc_ShapeTool)& shapeTool, const Handle (XCAFDoc_ColorTool)& colorTool, const XcafLookup& lookup, Color& color)
 {
     TDF_Label shapeLabel;
-    if (!shapeTool->Search (shape, shapeLabel)) {
+    if (!lookup.Search (shape, shapeLabel)) {
         return false;
     }
     return GetLabelColor (shapeLabel, shapeTool, colorTool, color);
+}
+
+XcafLookup::XcafLookup (const Handle (XCAFDoc_ShapeTool)& shapeTool, const Handle (XCAFDoc_ColorTool)& colorTool) :
+    shapeTool (shapeTool),
+    componentLabels (),
+    faceColors ()
+{
+    CollectComponents ();
+    CollectFaceColors (colorTool);
+}
+
+bool XcafLookup::Search (const TopoDS_Shape& shape, TDF_Label& label) const
+{
+    // Same order as XCAFDoc_ShapeTool::Search
+    if (!shape.Location ().IsIdentity ()) {
+        if (shapeTool->FindShape (shape, label, Standard_True)) {
+            return true;
+        }
+        if (componentLabels.Find (shape, label)) {
+            return true;
+        }
+    }
+    return shapeTool->Search (shape, label, Standard_False, Standard_False, Standard_True);
+}
+
+bool XcafLookup::GetFaceColor (const TopoDS_Face& face, Color& color) const
+{
+    return faceColors.Find (face.Located (TopLoc_Location ()), color);
+}
+
+void XcafLookup::CollectComponents ()
+{
+    // First match wins, as in XCAFDoc_ShapeTool::Search
+    TDF_LabelSequence labels;
+    shapeTool->GetShapes (labels);
+    for (Standard_Integer i = 1; i <= labels.Length (); i++) {
+        if (!XCAFDoc_ShapeTool::IsAssembly (labels.Value (i))) {
+            continue;
+        }
+        TDF_LabelSequence components;
+        XCAFDoc_ShapeTool::GetComponents (labels.Value (i), components);
+        for (Standard_Integer j = 1; j <= components.Length (); j++) {
+            TopoDS_Shape component = XCAFDoc_ShapeTool::GetShape (components.Value (j));
+            if (!component.IsNull () && !componentLabels.IsBound (component)) {
+                componentLabels.Bind (component, components.Value (j));
+            }
+        }
+    }
+}
+
+void XcafLookup::CollectFaceColors (const Handle (XCAFDoc_ColorTool)& colorTool)
+{
+    // The colors of the parts' own faces, shared by every placement of the part
+    for (TDF_ChildIterator it (shapeTool->Label (), Standard_True); it.More (); it.Next ()) {
+        const TDF_Label& label = it.Value ();
+        if (!XCAFDoc_ShapeTool::IsSimpleShape (label)) {
+            continue;
+        }
+        TopoDS_Shape shape = XCAFDoc_ShapeTool::GetShape (label);
+        if (shape.IsNull () || shape.ShapeType () != TopAbs_FACE) {
+            continue;
+        }
+        TopoDS_Shape unlocatedFace = shape.Located (TopLoc_Location ());
+        Color color;
+        if (!faceColors.IsBound (unlocatedFace) && GetLabelColorNoRef (label, colorTool, color)) {
+            faceColors.Bind (unlocatedFace, color);
+        }
+    }
 }
 
 static bool IsFreeShape (const TDF_Label& label, const Handle (XCAFDoc_ShapeTool)& shapeTool)
@@ -97,51 +165,50 @@ static bool IsFreeShape (const TDF_Label& label, const Handle (XCAFDoc_ShapeTool
 class XcafFace : public OcctFace
 {
 public:
-    XcafFace (const TopoDS_Face& face, const Handle (XCAFDoc_ShapeTool)& shapeTool, const Handle (XCAFDoc_ColorTool)& colorTool) :
+    XcafFace (const TopoDS_Face& face, const XcafLookup& lookup) :
         OcctFace (face),
-        shapeTool (shapeTool),
-        colorTool (colorTool)
+        lookup (lookup)
     {
 
     }
 
     virtual bool GetColor (Color& color) const override
     {
-        return GetShapeColor ((const TopoDS_Shape&) face, shapeTool, colorTool, color);
+        return lookup.GetFaceColor (face, color);
     }
 
 private:
-    const Handle (XCAFDoc_ShapeTool)& shapeTool;
-    const Handle (XCAFDoc_ColorTool)& colorTool;
+    const XcafLookup& lookup;
 };
 
 class XcafShapeMesh : public Mesh
 {
 public:
-    XcafShapeMesh (const TopoDS_Shape& shape, const Handle (XCAFDoc_ShapeTool)& shapeTool, const Handle (XCAFDoc_ColorTool)& colorTool) :
+    XcafShapeMesh (const TopoDS_Shape& shape, const Handle (XCAFDoc_ShapeTool)& shapeTool, const Handle (XCAFDoc_ColorTool)& colorTool, const XcafLookup& lookup) :
         Mesh (),
         shape (shape),
         shapeTool (shapeTool),
-        colorTool (colorTool)
+        colorTool (colorTool),
+        lookup (lookup)
     {
 
     }
 
     virtual std::string GetName () const override
     {
-        return GetShapeName (shape, shapeTool);
+        return GetShapeName (shape, shapeTool, lookup);
     }
 
     virtual bool GetColor (Color& color) const override
     {
-        return GetShapeColor (shape, shapeTool, colorTool, color);
+        return GetShapeColor (shape, shapeTool, colorTool, lookup, color);
     }
 
     virtual void EnumerateFaces (const std::function<void (const Face& face)>& onFace) const override
     {
         for (TopExp_Explorer ex (shape, TopAbs_FACE); ex.More (); ex.Next ()) {
             const TopoDS_Face& face = TopoDS::Face (ex.Current ());
-            XcafFace outputFace (face, shapeTool, colorTool);
+            XcafFace outputFace (face, lookup);
             onFace (outputFace);
         }
     }
@@ -150,16 +217,16 @@ private:
     const TopoDS_Shape& shape;
     const Handle (XCAFDoc_ShapeTool)& shapeTool;
     const Handle (XCAFDoc_ColorTool)& colorTool;
+    const XcafLookup& lookup;
 };
 
 class XcafStandaloneFacesMesh : public Mesh
 {
 public:
-    XcafStandaloneFacesMesh (const TopoDS_Shape& shape, const Handle (XCAFDoc_ShapeTool)& shapeTool, const Handle (XCAFDoc_ColorTool)& colorTool) :
+    XcafStandaloneFacesMesh (const TopoDS_Shape& shape, const XcafLookup& lookup) :
         Mesh (),
         shape (shape),
-        shapeTool (shapeTool),
-        colorTool (colorTool)
+        lookup (lookup)
     {
 
     }
@@ -184,24 +251,24 @@ public:
     {
         for (TopExp_Explorer ex (shape, TopAbs_FACE, TopAbs_SHELL); ex.More (); ex.Next ()) {
             const TopoDS_Face& face = TopoDS::Face (ex.Current ());
-            XcafFace outputFace (face, shapeTool, colorTool);
+            XcafFace outputFace (face, lookup);
             onFace (outputFace);
         }
     }
 
 private:
     const TopoDS_Shape& shape;
-    const Handle (XCAFDoc_ShapeTool)& shapeTool;
-    const Handle (XCAFDoc_ColorTool)& colorTool;
+    const XcafLookup& lookup;
 };
 
 class XcafNode : public Node
 {
 public:
-    XcafNode (const TDF_Label& label, const Handle (XCAFDoc_ShapeTool)& shapeTool, const Handle (XCAFDoc_ColorTool)& colorTool) :
+    XcafNode (const TDF_Label& label, const Handle (XCAFDoc_ShapeTool)& shapeTool, const Handle (XCAFDoc_ColorTool)& colorTool, const XcafLookup& lookup) :
         label (label),
         shapeTool (shapeTool),
-        colorTool (colorTool)
+        colorTool (colorTool),
+        lookup (lookup)
     {
 
     }
@@ -222,7 +289,7 @@ public:
             TDF_Label childLabel = it.Value ();
             if (IsFreeShape (childLabel, shapeTool)) {
                 children.push_back (std::make_shared<const XcafNode> (
-                    childLabel, shapeTool, colorTool
+                    childLabel, shapeTool, colorTool, lookup
                     ));
             }
         }
@@ -281,19 +348,19 @@ private:
         // Enumerate solids
         for (TopExp_Explorer ex (shape, TopAbs_SOLID); ex.More (); ex.Next ()) {
             const TopoDS_Shape& currentShape = ex.Current ();
-            XcafShapeMesh outputShapeMesh (currentShape, shapeTool, colorTool);
+            XcafShapeMesh outputShapeMesh (currentShape, shapeTool, colorTool, lookup);
             onMesh (outputShapeMesh);
         }
 
         // Enumerate shells that are not part of a solid
         for (TopExp_Explorer ex (shape, TopAbs_SHELL, TopAbs_SOLID); ex.More (); ex.Next ()) {
             const TopoDS_Shape& currentShape = ex.Current ();
-            XcafShapeMesh outputShapeMesh (currentShape, shapeTool, colorTool);
+            XcafShapeMesh outputShapeMesh (currentShape, shapeTool, colorTool, lookup);
             onMesh (outputShapeMesh);
         }
 
         // Create a mesh from faces that are not part of a shell
-        XcafStandaloneFacesMesh standaloneFacesMesh (shape, shapeTool, colorTool);
+        XcafStandaloneFacesMesh standaloneFacesMesh (shape, lookup);
         if (standaloneFacesMesh.HasFaces ()) {
             onMesh (standaloneFacesMesh);
         }
@@ -302,14 +369,16 @@ private:
     TDF_Label label;
     const Handle (XCAFDoc_ShapeTool)& shapeTool;
     const Handle (XCAFDoc_ColorTool)& colorTool;
+    const XcafLookup& lookup;
 };
 
 class XcafRootNode : public Node
 {
 public:
-    XcafRootNode (const Handle (XCAFDoc_ShapeTool)& shapeTool, const Handle (XCAFDoc_ColorTool)& colorTool, const ImportParams& params) :
+    XcafRootNode (const Handle (XCAFDoc_ShapeTool)& shapeTool, const Handle (XCAFDoc_ColorTool)& colorTool, const XcafLookup& lookup, const ImportParams& params) :
         shapeTool (shapeTool),
         colorTool (colorTool),
+        lookup (lookup),
         params (params)
     {
 
@@ -333,7 +402,7 @@ public:
                     continue;
                 }
                 children.push_back (std::make_shared<const XcafNode> (
-                    childLabel, shapeTool, colorTool
+                    childLabel, shapeTool, colorTool, lookup
                     ));
             }
         }
@@ -354,6 +423,7 @@ public:
 private:
     const Handle (XCAFDoc_ShapeTool)& shapeTool;
     const Handle (XCAFDoc_ColorTool)& colorTool;
+    const XcafLookup& lookup;
     const ImportParams& params;
 };
 
@@ -362,6 +432,7 @@ ImporterXcaf::ImporterXcaf () :
     document (nullptr),
     shapeTool (nullptr),
     colorTool (nullptr),
+    lookup (nullptr),
     rootNode (nullptr)
 {
 
@@ -388,7 +459,8 @@ Importer::Result ImporterXcaf::LoadFile (const std::vector<std::uint8_t>& fileCo
         return Importer::Result::ImportFailed;
     }
 
-    rootNode = std::make_shared<const XcafRootNode> (shapeTool, colorTool, params);
+    lookup.reset (new XcafLookup (shapeTool, colorTool));
+    rootNode = std::make_shared<const XcafRootNode> (shapeTool, colorTool, *lookup, params);
     return Importer::Result::Success;
 }
 

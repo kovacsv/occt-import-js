@@ -149,7 +149,7 @@ static emscripten::val ImportFile (ImporterPtr importer, const emscripten::val& 
 {
     emscripten::val resultObj (emscripten::val::object ());
 
-    const std::vector<uint8_t>& bufferArr = emscripten::vecFromJSArray<std::uint8_t> (buffer);
+    const std::vector<uint8_t> bufferArr = emscripten::convertJSArrayToNumberVector<std::uint8_t> (buffer);
     Importer::Result importResult = importer->LoadFile (bufferArr, params);
     resultObj.set ("success", importResult == Importer::Result::Success);
     if (importResult != Importer::Result::Success) {
