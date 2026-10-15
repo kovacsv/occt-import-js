@@ -8,6 +8,7 @@
 #include <TDocStd_Document.hxx>
 #include <TDataStd_Name.hxx>
 #include <Quantity_Color.hxx>
+#include <TopLoc_Location.hxx>
 #include <BRep_Tool.hxx>
 #include <XCAFDoc_DocumentTool.hxx>
 
@@ -83,7 +84,11 @@ static bool GetShapeColor (const TopoDS_Shape& shape, const Handle (XCAFDoc_Shap
 {
     TDF_Label shapeLabel;
     if (!shapeTool->Search (shape, shapeLabel)) {
-        return false;
+        // A shape taken from an assembly carries its instance's placement, but the label that holds its colour
+        // belongs to the unplaced part, so look the shape up again without the placement.
+        if (shape.Location ().IsIdentity () || !shapeTool->Search (shape.Located (TopLoc_Location ()), shapeLabel)) {
+            return false;
+        }
     }
     return GetLabelColor (shapeLabel, shapeTool, colorTool, color);
 }

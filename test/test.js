@@ -236,6 +236,20 @@ it ('conical-surface', function () {
     assert.equal (3954, result.meshes[0].index.array.length);
 });
 
+it ('assembly-face-colors', function () {
+    // two placed parts whose colours are set on their faces (OCCT XCAF writer): A red, B blue
+    let result = LoadStepFile ('./test/testfiles/assembly-face-colors/assembly-face-colors.stp');
+    assert (result.success);
+    assert.strictEqual (result.meshes.length, 2);
+    let expected = { A : [ 1, 0, 0 ], B : [ 0, 0, 1 ] };
+    for (let mesh of result.meshes) {
+        assert.strictEqual (mesh.brep_faces.length, 6);
+        for (let face of mesh.brep_faces) {
+            assert.deepStrictEqual (face.color, expected[mesh.name]);
+        }
+    }
+});
+
 });
 
 describe ('Iges Import', function () {
